@@ -60,19 +60,36 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
         "rate hike", "rate cut", "yen-buying intervention", "yen-selling intervention",
         "intervention in the foreign exchange market",
     )
+    major_data_terms = (
+        "consumer price index", "core cpi", "cpi", "pce", "personal consumption expenditures",
+        "nonfarm payroll", "payrolls", "employment situation", "unemployment rate", "jobless claims",
+        "producer price index", "ppi", "gross domestic product", "gdp", "ism manufacturing",
+        "ism services", "retail sales", "雇用統計", "非農業部門", "失業率", "失業保険",
+        "消費者物価", "物価指数", "日銀短観", "鉱工業生産", "小売売上高", "機械受注",
+    )
 
     # Rate decisions by the Fed move USD/JPY in the opposite direction to
     # equivalent BOJ/MOF actions; do not infer a direction from generic news.
+    if "円買い介入" in text or "yen-buying intervention" in text:
+        return 5, "USD/JPY下落しやすい（円買い要因）", "金融政策・為替"
+    if "円売り介入" in text or "yen-selling intervention" in text:
+        return 5, "USD/JPY上昇しやすい（円売り要因）", "金融政策・為替"
     if any(term in text for term in yen_strengthening):
         if source == "Federal Reserve":
             return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
-        return 5, "USD/JPY下落しやすい（円高要因）", "金融政策・為替"
+        if source in {"日本銀行", "財務省"}:
+            return 5, "USD/JPY下落しやすい（円高要因）", "金融政策・為替"
+        return 5, "方向は記事の文脈次第", "金融政策・為替"
     if any(term in text for term in yen_weakening):
         if source == "Federal Reserve":
             return 5, "USD/JPY下落しやすい（ドル安要因）", "金融政策"
-        return 5, "USD/JPY上昇しやすい（円安要因）", "金融政策・為替"
+        if source in {"日本銀行", "財務省"}:
+            return 5, "USD/JPY上昇しやすい（円安要因）", "金融政策・為替"
+        return 5, "方向は記事の文脈次第", "金融政策・為替"
     if any(term in text for term in high_impact_terms):
         return 5, "方向は内容次第", "金融政策・為替"
+    if any(term in text for term in major_data_terms):
+        return 4, "発表内容次第（変動注意）", "重要経済指標"
 
     return 2, "方向は内容次第", "公式発表"
 
