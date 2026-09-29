@@ -14,6 +14,8 @@
     .calendar-feed{display:grid;gap:9px;margin-top:16px}.calendar-event{padding:12px;background:#111b2b;border:1px solid var(--line);border-radius:12px}.event-top{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.event-impact.high{color:#ff9ba8}.event-impact.medium{color:var(--gold)}.event-impact.low{color:var(--green)}.event-name{font-size:13px;font-weight:700;margin:8px 0;line-height:1.5}.event-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.event-value{padding:6px 0 0;background:transparent;border-top:1px solid var(--line);min-width:0}.event-value span{display:block;color:var(--muted);font-size:10px}.event-value strong{display:block;font-size:13px;margin-top:3px;overflow-wrap:anywhere}.calendar-credit{font-size:10px;color:var(--muted);margin:12px 0 0}.calendar-credit a{color:#9dbbff}
     .tabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;background:#0e1828;border:1px solid var(--line);border-radius:13px}.tab-button{flex:1;min-width:0;border:0;border-radius:9px;padding:11px 9px;background:transparent;color:var(--muted);font:600 13px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;white-space:nowrap}.tab-button[aria-selected="true"]{background:#203553;color:var(--text);box-shadow:0 2px 8px #0003}.tab-button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.tab-panel[hidden]{display:none}.tab-panel>.card{max-width:800px;margin:0 auto}
     .rate-bar{position:sticky;top:8px;z-index:10;margin-bottom:14px}.rate-bar .card{padding:10px 16px;background:#111b2cf2;backdrop-filter:blur(12px);box-shadow:0 8px 24px #0006}.rate-bar .price-head{align-items:center}.rate-bar .rate-widget{min-height:56px;margin-top:4px}.rate-bar .statrow{margin-top:0}
+    .news-filter-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select{max-width:220px;padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}
+    .x-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin-top:16px}.x-account{min-width:0;padding:12px;background:#0c1524;border:1px solid var(--line);border-radius:12px}.x-account h3{font-size:14px;margin:0 0 10px}.x-account .twitter-timeline{color:var(--blue)}
     @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
   </style>
 </head>
@@ -37,9 +39,11 @@
     <nav class="tabs" role="tablist" aria-label="表示する情報">
       <button class="tab-button" id="tab-news" type="button" role="tab" aria-selected="true" aria-controls="panel-news" tabindex="0">速報ニュース</button>
       <button class="tab-button" id="tab-calendar" type="button" role="tab" aria-selected="false" aria-controls="panel-calendar" tabindex="-1">経済指標</button>
+      <button class="tab-button" id="tab-x" type="button" role="tab" aria-selected="false" aria-controls="panel-x" tabindex="-1">X投稿</button>
     </nav>
     <section class="tab-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0">
       <div class="section-title"><h2>速報ニュース</h2><span id="news-status" aria-live="polite">ニュースを読み込んでいます</span></div>
+      <div class="news-filter-row"><label for="news-source-filter">情報源</label><select id="news-source-filter"><option value="all">すべて</option></select></div>
       <section class="feed" id="news-feed" aria-label="速報ニュース"><div class="empty">Supabaseからニュースを読み込んでいます…</div></section>
     </section>
     <section class="tab-panel" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" tabindex="0" hidden>
@@ -49,6 +53,18 @@
         <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。実績は発表前は「未発表」です。よく使う指標名は日本語で表示します。</p>
         <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
         <p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p>
+      </article>
+    </section>
+    <section class="tab-panel" id="panel-x" role="tabpanel" aria-labelledby="tab-x" tabindex="0" hidden>
+      <article class="card">
+        <div class="label">公開アカウントの投稿</div>
+        <h2 style="font-size:19px;margin:10px 0 8px">X投稿</h2>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">投稿はXの公式タイムラインで表示します。日本語訳や重要度判定は行いません。</p>
+        <div class="x-grid">
+          <section class="x-account"><h3>@Min_FX</h3><a class="twitter-timeline" data-theme="dark" data-height="520" href="https://x.com/Min_FX">@Min_FXのポスト</a></section>
+          <section class="x-account"><h3>@financialjuice</h3><a class="twitter-timeline" data-theme="dark" data-height="520" href="https://x.com/financialjuice">@financialjuiceのポスト</a></section>
+          <section class="x-account"><h3>@hitsuzikai</h3><a class="twitter-timeline" data-theme="dark" data-height="520" href="https://x.com/hitsuzikai">@hitsuzikaiのポスト</a></section>
+        </div>
       </article>
     </section>
     <p class="foot">個人向けの情報整理用ダッシュボードです。重要度とドル円への影響は、ニュース見出し等のキーワードによる簡易な目安で、AIによる分析や売買推奨ではありません。内容を誤判定する場合があります。投資判断の前に、必ず情報源の原文をご確認ください。</p>
@@ -61,7 +77,13 @@
     const connectionStatus = document.getElementById("connection-status");
     const calendarFeed = document.getElementById("calendar-feed");
     const calendarStatus = document.getElementById("calendar-status");
+    const newsSourceFilter = document.getElementById("news-source-filter");
     const tabButtons = [...document.querySelectorAll('[role="tab"]')];
+    let newsItems = [];
+    let newsUpdatedAt = "";
+    let xWidgetsLoading = false;
+
+    newsSourceFilter.addEventListener("change", renderNewsList);
 
     function activateTab(button, moveFocus = false) {
       tabButtons.forEach(tab => {
@@ -70,7 +92,19 @@
         tab.tabIndex = selected ? 0 : -1;
         document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
       });
+      if (button.id === "tab-x") loadXWidgets();
       if (moveFocus) button.focus();
+    }
+
+    function loadXWidgets() {
+      if (xWidgetsLoading || window.twttr?.widgets) return;
+      xWidgetsLoading = true;
+      const script = document.createElement("script");
+      script.src = "https://platform.x.com/widgets.js";
+      script.async = true;
+      script.charset = "utf-8";
+      script.onerror = () => { xWidgetsLoading = false; };
+      document.body.append(script);
     }
 
     tabButtons.forEach((button, index) => {
@@ -93,6 +127,24 @@
 
     function updatedAtText() {
       return new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+    }
+
+    function sourceLabel(source) {
+      if (source === "日本銀行") return "日銀";
+      if (source === "Federal Reserve") return "FRB";
+      return source || "情報源不明";
+    }
+
+    function renderNewsList() {
+      const selected = newsSourceFilter.value;
+      const items = selected === "all" ? newsItems : newsItems.filter(item => sourceLabel(item.source) === selected);
+      feed.replaceChildren();
+      if (!items.length) {
+        feed.innerHTML = `<div class="empty">${newsItems.length ? "この情報源の記事はありません。" : "ニュースはまだ登録されていません。"}</div>`;
+      } else {
+        items.forEach(item => feed.append(renderNews(item)));
+      }
+      newsStatus.textContent = `表示 ${items.length}/${newsItems.length}件 · 更新 ${newsUpdatedAt}`;
     }
 
     function renderNews(item) {
@@ -160,18 +212,19 @@
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const items = await response.json();
-        feed.replaceChildren();
+        newsItems = items;
+        newsUpdatedAt = updatedAtText();
         connectionStatus.textContent = "● Supabase接続済み";
-        if (!items.length) {
-          feed.innerHTML = '<div class="empty">接続できました。ニュースはまだ登録されていません。<br>情報源を設定すると、記事がここに表示されます。</div>';
-          newsStatus.textContent = `記事 0件 · 更新 ${updatedAtText()}`;
-          return;
-        }
-        items.forEach(item => feed.append(renderNews(item)));
-        newsStatus.textContent = `最新記事 ${items.length}件 · 更新 ${updatedAtText()}`;
+        const options = [...new Set(items.map(item => sourceLabel(item.source)))].filter(label => label !== "情報源不明");
+        const previous = newsSourceFilter.value;
+        newsSourceFilter.replaceChildren(new Option("すべて", "all"));
+        options.forEach(label => newsSourceFilter.add(new Option(label, label)));
+        newsSourceFilter.value = options.includes(previous) ? previous : "all";
+        renderNewsList();
       } catch (error) {
         connectionStatus.textContent = "● 接続を確認できません";
         newsStatus.textContent = "ニュースを読み込めませんでした";
+        newsItems = [];
         feed.replaceChildren();
         const message = document.createElement("div");
         message.className = "empty";
