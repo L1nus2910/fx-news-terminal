@@ -1,0 +1,44 @@
+name: Telegram通知テスト
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Telegramへテスト通知
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ["TELEGRAM_BOT_TOKEN"]
+          chat_id = os.environ["TELEGRAM_CHAT_ID"]
+          data = urllib.parse.urlencode({
+              "chat_id": chat_id,
+              "text": "FX速報 AI のテスト通知です。Telegramの設定ができました。"
+          }).encode()
+          request = urllib.request.Request(
+              f"https://api.telegram.org/bot{token}/sendMessage",
+              data=data
+          )
+
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  result = json.loads(response.read())
+              if not result.get("ok"):
+                  raise SystemExit("Telegramへの送信に失敗しました。設定を確認してください。")
+              print("テスト通知を送信しました。")
+          except urllib.error.HTTPError as error:
+              raise SystemExit(f"Telegramへの送信に失敗しました（HTTP {error.code}）。設定を確認してください。")
+          PY
