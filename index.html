@@ -11,6 +11,7 @@
     .wrap{width:min(1120px,calc(100% - 32px));margin:auto;padding:28px 0 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#377dff,#55d6b2);display:grid;place-items:center;font-weight:900;color:#06121e}.brand h1{font-size:20px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.status{font-size:12px;color:var(--gold);border:1px solid #64502c;background:#312817;padding:8px 12px;border-radius:99px;white-space:nowrap}
     .notice{padding:12px 15px;border:1px solid #574922;background:#241f13;color:#f3d99c;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:16px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.card{background:linear-gradient(145deg,#131f31,#101827);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.label{font-size:12px;color:var(--muted);letter-spacing:.04em}.price{font-size:clamp(34px,7vw,54px);font-weight:750;letter-spacing:-.04em;margin:8px 0 2px}.change{color:var(--green);font-size:14px}.price-head{display:flex;justify-content:space-between;align-items:flex-start}.pill{font-size:11px;border-radius:99px;padding:6px 9px;background:#172844;color:#9dbbff}.rate-widget{margin-top:14px;min-height:84px;display:flex;align-items:center}.rate-widget tv-single-ticker{display:block;width:100%;--tv-color-platform-background:transparent;--tv-color-pane-background:transparent;--tv-color-widget-background:transparent;--tv-color-widget-element-background-hover:#1a2940;--tv-color-toolbar-button-text:#edf4ff;--tv-color-toolbar-button-text-hover:#fff;--tv-color-toolbar-button-background-hover:#1a2940;--tv-color-text:#edf4ff;--tv-color-hairline:#243249}.statrow{display:flex;gap:24px;margin-top:6px}.statrow div{font-size:12px;color:var(--muted)}.statrow strong{display:block;color:var(--text);font-size:14px;margin-top:4px}
     .section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}.section-title h2{font-size:16px;margin:0}.section-title span{font-size:12px;color:var(--muted)}.feed{display:grid;gap:10px}.news{display:grid;grid-template-columns:72px 1fr auto;gap:13px;align-items:start;padding:15px;background:#111b2b;border:1px solid var(--line);border-radius:13px}.time{font-size:12px;color:var(--muted);padding-top:2px}.headline{font-size:14px;line-height:1.55}.headline strong{display:block;margin-bottom:4px}.headline a{color:var(--text);text-decoration:none}.headline a:hover{color:var(--blue)}.meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.tag{font-size:10px;padding:4px 7px;border-radius:99px;background:#1b2940;color:#b4c6df}.tag.alert{color:#ffb4bf;background:#3a202a}.impact{font-size:11px;color:var(--gold);white-space:nowrap}.empty{border:1px dashed #35445c;border-radius:13px;padding:18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.65}.foot{font-size:11px;color:#8191a8;line-height:1.7;margin-top:18px}
+    .calendar-feed{display:grid;gap:9px;margin-top:16px}.calendar-event{padding:12px;background:#111b2b;border:1px solid var(--line);border-radius:12px}.event-top{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.event-name{font-size:13px;font-weight:700;margin:8px 0;line-height:1.5}.event-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.event-value{padding:8px;background:#0c1524;border-radius:8px;min-width:0}.event-value span{display:block;color:var(--muted);font-size:10px}.event-value strong{display:block;font-size:12px;margin-top:4px;overflow-wrap:anywhere}.calendar-credit{font-size:10px;color:var(--muted);margin:12px 0 0}.calendar-credit a{color:#9dbbff}
     @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
   </style>
 </head>
@@ -30,7 +31,7 @@
         <div class="statrow"><div>表示<strong>レート・前日比</strong></div><div>通貨ペア<strong>USD/JPY</strong></div></div>
         <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-single-ticker.js"></script>
       </article>
-      <article class="card"><div class="label">今日のマーケット</div><h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0">経済カレンダーを接続すると、発表予定や結果をここに表示します。</p><div class="empty" style="margin-top:18px">イベント情報はまだありません<br>データ連携後に表示されます</div></article>
+      <article class="card"><div class="label">今後14日間・重要イベント</div><h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2><p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。実績は発表前は「未発表」です。</p><div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div><p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p></article>
     </section>
     <div class="section-title"><h2>速報ニュース</h2><span id="news-status" aria-live="polite">ニュースを読み込んでいます</span></div>
     <section class="feed" id="news-feed" aria-label="速報ニュース"><div class="empty">Supabaseからニュースを読み込んでいます…</div></section>
@@ -42,6 +43,7 @@
     const feed = document.getElementById("news-feed");
     const newsStatus = document.getElementById("news-status");
     const connectionStatus = document.getElementById("connection-status");
+    const calendarFeed = document.getElementById("calendar-feed");
 
     function addTag(parent, text, alert = false) {
       if (!text) return;
@@ -136,7 +138,86 @@
       }
     }
 
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function displayValue(value) {
+      return value !== null && value !== undefined && value !== "" ? String(value) : "未発表";
+    }
+
+    function renderCalendarEvent(event) {
+      const article = document.createElement("article");
+      article.className = "calendar-event";
+
+      const eventDate = event.time_utc || event.datetime || event.date;
+      const top = document.createElement("div");
+      top.className = "event-top";
+      const time = document.createElement("span");
+      time.textContent = eventDate
+        ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: event.all_day ? undefined : "short" }).format(new Date(eventDate))
+        : "日時未定";
+      const importance = document.createElement("span");
+      importance.textContent = event.impact ? `重要度：${event.impact}` : "重要度：—";
+      top.append(time, importance);
+
+      const name = document.createElement("div");
+      name.className = "event-name";
+      name.textContent = event.title || event.name || event.event || "イベント";
+      const values = document.createElement("div");
+      values.className = "event-values";
+      [["前回", event.prior ?? event.previous], ["市場予想", event.consensus ?? event.forecast], ["実績", event.actual]].forEach(([label, value]) => {
+        const box = document.createElement("div");
+        box.className = "event-value";
+        const caption = document.createElement("span");
+        caption.textContent = label;
+        const result = document.createElement("strong");
+        result.textContent = displayValue(value);
+        box.append(caption, result);
+        values.append(box);
+      });
+
+      article.append(top, name, values);
+      return article;
+    }
+
+    async function loadCalendar() {
+      const start = new Date();
+      const end = new Date(start);
+      end.setDate(end.getDate() + 14);
+      const endpoint = new URL("https://www.financecalendar.com/wp-json/fc/v1/calendar");
+      endpoint.search = new URLSearchParams({
+        from: localDateString(start),
+        to: localDateString(end),
+        impact: "high",
+        limit: "30"
+      });
+
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
+        calendarFeed.replaceChildren();
+        if (!Array.isArray(events) || events.length === 0) {
+          calendarFeed.innerHTML = '<div class="empty">今後14日間に重要イベントはありません。</div>';
+          return;
+        }
+        events.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
+      } catch (error) {
+        calendarFeed.replaceChildren();
+        const message = document.createElement("div");
+        message.className = "empty";
+        message.textContent = "経済イベントを読み込めませんでした。時間をおいて再読み込みしてください。";
+        calendarFeed.append(message);
+      }
+    }
+
     loadNews();
+    loadCalendar();
   </script>
 </body>
 </html>
