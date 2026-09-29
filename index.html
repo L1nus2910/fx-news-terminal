@@ -9,7 +9,7 @@
     :root{color-scheme:dark;--bg:#0b1220;--panel:#111b2c;--line:#243249;--muted:#9aabc2;--text:#edf4ff;--green:#42d392;--red:#ff7185;--blue:#72a7ff;--gold:#f6c66a}
     *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a3150 0,transparent 55%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
     .wrap{width:min(1120px,calc(100% - 32px));margin:auto;padding:28px 0 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#377dff,#55d6b2);display:grid;place-items:center;font-weight:900;color:#06121e}.brand h1{font-size:20px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.status{font-size:12px;color:var(--gold);border:1px solid #64502c;background:#312817;padding:8px 12px;border-radius:99px;white-space:nowrap}
-    .notice{padding:12px 15px;border:1px solid #574922;background:#241f13;color:#f3d99c;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:16px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.card{background:linear-gradient(145deg,#131f31,#101827);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.label{font-size:12px;color:var(--muted);letter-spacing:.04em}.price{font-size:clamp(34px,7vw,54px);font-weight:750;letter-spacing:-.04em;margin:8px 0 2px}.change{color:var(--green);font-size:14px}.price-head{display:flex;justify-content:space-between;align-items:flex-start}.pill{font-size:11px;border-radius:99px;padding:6px 9px;background:#172844;color:#9dbbff}.chart{width:100%;height:120px;margin-top:14px}.chart svg{width:100%;height:100%;overflow:visible}.chart line{stroke:#29384e;stroke-width:1}.chart polyline{fill:none;stroke:#5bb9ff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.chart polygon{fill:url(#fill)}.chart text{fill:#8294ad;font:10px system-ui}.statrow{display:flex;gap:24px;margin-top:6px}.statrow div{font-size:12px;color:var(--muted)}.statrow strong{display:block;color:var(--text);font-size:14px;margin-top:4px}
+    .notice{padding:12px 15px;border:1px solid #574922;background:#241f13;color:#f3d99c;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:16px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.card{background:linear-gradient(145deg,#131f31,#101827);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.label{font-size:12px;color:var(--muted);letter-spacing:.04em}.price{font-size:clamp(34px,7vw,54px);font-weight:750;letter-spacing:-.04em;margin:8px 0 2px}.change{color:var(--green);font-size:14px}.price-head{display:flex;justify-content:space-between;align-items:flex-start}.pill{font-size:11px;border-radius:99px;padding:6px 9px;background:#172844;color:#9dbbff}.rate-widget{margin-top:14px;min-height:84px;display:flex;align-items:center}.rate-widget tv-single-ticker{display:block;width:100%;--tv-color-platform-background:transparent;--tv-color-pane-background:transparent;--tv-color-widget-background:transparent;--tv-color-widget-element-background-hover:#1a2940;--tv-color-toolbar-button-text:#edf4ff;--tv-color-toolbar-button-text-hover:#fff;--tv-color-toolbar-button-background-hover:#1a2940;--tv-color-text:#edf4ff;--tv-color-hairline:#243249}.statrow{display:flex;gap:24px;margin-top:6px}.statrow div{font-size:12px;color:var(--muted)}.statrow strong{display:block;color:var(--text);font-size:14px;margin-top:4px}
     .section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}.section-title h2{font-size:16px;margin:0}.section-title span{font-size:12px;color:var(--muted)}.feed{display:grid;gap:10px}.news{display:grid;grid-template-columns:72px 1fr auto;gap:13px;align-items:start;padding:15px;background:#111b2b;border:1px solid var(--line);border-radius:13px}.time{font-size:12px;color:var(--muted);padding-top:2px}.headline{font-size:14px;line-height:1.55}.headline strong{display:block;margin-bottom:4px}.headline a{color:var(--text);text-decoration:none}.headline a:hover{color:var(--blue)}.meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.tag{font-size:10px;padding:4px 7px;border-radius:99px;background:#1b2940;color:#b4c6df}.tag.alert{color:#ffb4bf;background:#3a202a}.impact{font-size:11px;color:var(--gold);white-space:nowrap}.empty{border:1px dashed #35445c;border-radius:13px;padding:18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.65}.foot{font-size:11px;color:#8191a8;line-height:1.7;margin-top:18px}
     @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
   </style>
@@ -20,48 +20,15 @@
       <div class="brand"><div class="logo" aria-hidden="true">FX</div><div><h1>FX速報 AI</h1><p>為替ニュース・マーケットダッシュボード</p></div></div>
       <div class="status" id="connection-status" aria-live="polite">● データを確認中</div>
     </header>
-    <div class="notice"><strong>お知らせ：</strong>価格・チャートはTradingViewの埋め込み表示です。ニュースは登録された情報だけを表示し、価格情報を使ったTelegram通知はまだ未対応です。投資判断の前に、必ず情報源の原文をご確認ください。</div>
+    <div class="notice"><strong>お知らせ：</strong>為替レートはTradingViewの埋め込み表示です。ニュースは登録された情報だけを表示し、価格情報を使ったTelegram通知はまだ未対応です。投資判断の前に、必ず情報源の原文をご確認ください。</div>
     <section class="grid" aria-label="相場情報">
       <article class="card">
-        <div class="price-head"><div><div class="label">米ドル / 日本円　USD/JPY</div><div class="change">為替チャート・価格情報</div></div><span class="pill">TradingView</span></div>
-        <div class="tradingview-widget-container" style="height:340px;width:100%;margin-top:14px">
-          <div class="tradingview-widget-container__widget" style="height:calc(100% - 24px);width:100%"></div>
-          <div class="tradingview-widget-copyright" style="font-size:10px;text-align:center;color:#8191a8"><a href="https://www.tradingview.com/symbols/FX-USDJPY/" rel="noopener nofollow" target="_blank" style="color:#9aabc2">USD/JPYチャート</a> by TradingView</div>
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-          {
-            "lineWidth": 2,
-            "lineType": 0,
-            "chartType": "area",
-            "fontColor": "#9aabc2",
-            "gridLineColor": "rgba(46, 58, 77, 0.45)",
-            "backgroundColor": "#111b2b",
-            "widgetFontColor": "#edf4ff",
-            "upColor": "#42d392",
-            "downColor": "#ff7185",
-            "colorTheme": "dark",
-            "isTransparent": true,
-            "locale": "ja",
-            "chartOnly": false,
-            "scalePosition": "right",
-            "scaleMode": "Normal",
-            "fontFamily": "system-ui, -apple-system, Segoe UI, sans-serif",
-            "valuesTracking": "1",
-            "changeMode": "price-and-percent",
-            "symbols": [["USD/JPY", "FX:USDJPY|15"]],
-            "dateRanges": ["1d|1", "1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"],
-            "fontSize": "10",
-            "headerFontSize": "medium",
-            "autosize": true,
-            "width": "100%",
-            "height": "100%",
-            "noTimeScale": false,
-            "hideDateRanges": false,
-            "hideMarketStatus": false,
-            "hideSymbolLogo": true
-          }
-          </script>
+        <div class="price-head"><div><div class="label">米ドル / 日本円　USD/JPY</div><div class="change">現在の為替レート</div></div><span class="pill">TradingView</span></div>
+        <div class="rate-widget" aria-label="米ドルと日本円の現在レート">
+          <tv-single-ticker symbol="FX:USDJPY" hide-market-status size="large" theme="dark" force-theme locale="ja" transparent></tv-single-ticker>
         </div>
-        <div class="statrow"><div>価格情報<strong>TradingView</strong></div><div>通貨ペア<strong>USD/JPY</strong></div><div>アプリ通知<strong>未連携</strong></div></div>
+        <div class="statrow"><div>表示<strong>レート・前日比</strong></div><div>通貨ペア<strong>USD/JPY</strong></div></div>
+        <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-single-ticker.js"></script>
       </article>
       <article class="card"><div class="label">今日のマーケット</div><h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2><p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0">経済カレンダーを接続すると、発表予定や結果をここに表示します。</p><div class="empty" style="margin-top:18px">イベント情報はまだありません<br>データ連携後に表示されます</div></article>
     </section>
