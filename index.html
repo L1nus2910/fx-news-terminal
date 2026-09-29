@@ -1,227 +1,370 @@
-"""Fetch official central-bank/government RSS headlines into Supabase."""
 
-from __future__ import annotations
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>FX速報 AI | USD/JPY</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#111b2c;--line:#243249;--muted:#9aabc2;--text:#edf4ff;--green:#42d392;--red:#ff7185;--blue:#72a7ff;--gold:#f6c66a}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a3150 0,transparent 55%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+    .wrap{width:min(1120px,calc(100% - 32px));margin:auto;padding:28px 0 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#377dff,#55d6b2);display:grid;place-items:center;font-weight:900;color:#06121e}.brand h1{font-size:20px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.status{font-size:12px;color:var(--gold);border:1px solid #64502c;background:#312817;padding:8px 12px;border-radius:99px;white-space:nowrap}
+    .notice{padding:12px 15px;border:1px solid #574922;background:#241f13;color:#f3d99c;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:16px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.card{background:linear-gradient(145deg,#131f31,#101827);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.label{font-size:12px;color:var(--muted);letter-spacing:.04em}.price{font-size:clamp(34px,7vw,54px);font-weight:750;letter-spacing:-.04em;margin:8px 0 2px}.change{color:var(--green);font-size:14px}.price-head{display:flex;justify-content:space-between;align-items:flex-start}.pill{font-size:11px;border-radius:99px;padding:6px 9px;background:#172844;color:#9dbbff}.rate-widget{margin-top:14px;min-height:84px;display:flex;align-items:center}.rate-widget tv-single-ticker{display:block;width:100%;--tv-color-platform-background:transparent;--tv-color-pane-background:transparent;--tv-color-widget-background:transparent;--tv-color-widget-element-background-hover:#1a2940;--tv-color-toolbar-button-text:#edf4ff;--tv-color-toolbar-button-text-hover:#fff;--tv-color-toolbar-button-background-hover:#1a2940;--tv-color-text:#edf4ff;--tv-color-hairline:#243249}.statrow{display:flex;gap:24px;margin-top:6px}.statrow div{font-size:12px;color:var(--muted)}.statrow strong{display:block;color:var(--text);font-size:14px;margin-top:4px}
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}.section-title h2{font-size:16px;margin:0}.section-title span{font-size:12px;color:var(--muted)}.feed{display:grid;gap:10px}.news{display:grid;grid-template-columns:72px 1fr auto;gap:13px;align-items:start;padding:15px;background:#111b2b;border:1px solid var(--line);border-radius:13px}.time{font-size:12px;color:var(--muted);padding-top:2px}.headline{font-size:14px;line-height:1.55}.headline strong{display:block;margin-bottom:4px}.headline a{color:var(--text);text-decoration:none}.headline a:hover{color:var(--blue)}.meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.tag{font-size:10px;padding:4px 7px;border-radius:99px;background:#1b2940;color:#b4c6df}.tag.alert{color:#ffb4bf;background:#3a202a}.impact{font-size:11px;color:var(--gold);white-space:nowrap}.empty{border:1px dashed #35445c;border-radius:13px;padding:18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.65}.foot{font-size:11px;color:#8191a8;line-height:1.7;margin-top:18px}
+    .calendar-feed{display:grid;gap:9px;margin-top:16px}.calendar-event{padding:12px;background:#111b2b;border:1px solid var(--line);border-radius:12px}.event-top{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.event-impact.high{color:#ff9ba8}.event-impact.medium{color:var(--gold)}.event-impact.low{color:var(--green)}.event-name{font-size:13px;font-weight:700;margin:8px 0;line-height:1.5}.event-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.event-value{padding:6px 0 0;background:transparent;border-top:1px solid var(--line);min-width:0}.event-value span{display:block;color:var(--muted);font-size:10px}.event-value strong{display:block;font-size:13px;margin-top:3px;overflow-wrap:anywhere}.calendar-credit{font-size:10px;color:var(--muted);margin:12px 0 0}.calendar-credit a{color:#9dbbff}
+    .tabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;background:#0e1828;border:1px solid var(--line);border-radius:13px}.tab-button{flex:1;min-width:0;border:0;border-radius:9px;padding:11px 9px;background:transparent;color:var(--muted);font:600 13px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;white-space:nowrap}.tab-button[aria-selected="true"]{background:#203553;color:var(--text);box-shadow:0 2px 8px #0003}.tab-button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.tab-panel[hidden]{display:none}.tab-panel>.card{max-width:800px;margin:0 auto}
+    .rate-bar{position:sticky;top:8px;z-index:10;margin-bottom:14px}.rate-bar .card{padding:10px 16px;background:#111b2cf2;backdrop-filter:blur(12px);box-shadow:0 8px 24px #0006}.rate-bar .price-head{align-items:center}.rate-bar .rate-widget{min-height:56px;margin-top:4px}.rate-bar .statrow{margin-top:0}
+    .news-filter-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select{max-width:220px;padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}
+    .x-timeline{display:block;margin-top:16px;min-height:520px}.x-timeline .twitter-timeline{color:var(--blue)}.x-open-list{display:inline-block;margin-top:12px;color:var(--blue)}
+    @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="brand"><div class="logo" aria-hidden="true">FX</div><div><h1>FX速報 AI</h1><p>為替ニュース・マーケットダッシュボード</p></div></div>
+      <div class="status" id="connection-status" aria-live="polite">● データを確認中</div>
+    </header>
+    <div class="notice"><strong>お知らせ：</strong>このサイトで為替レート、公式ニュース、経済指標を確認できます。投資判断の前に、必ず情報源の原文をご確認ください。</div>
+    <section class="rate-bar" aria-label="常時表示の為替レート">
+      <article class="card">
+        <div class="price-head"><div><div class="label">米ドル / 日本円　USD/JPY</div><div class="change">現在の為替レート</div></div><span class="pill">TradingView</span></div>
+        <div class="rate-widget" aria-label="米ドルと日本円の現在レート">
+          <tv-single-ticker symbol="FX:USDJPY" hide-market-status size="large" theme="dark" force-theme locale="ja" transparent></tv-single-ticker>
+        </div>
+        <div class="statrow"><div>表示<strong>レート・前日比</strong></div><div>通貨ペア<strong>USD/JPY</strong></div></div>
+        <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-single-ticker.js"></script>
+      </article>
+    </section>
+    <nav class="tabs" role="tablist" aria-label="表示する情報">
+      <button class="tab-button" id="tab-news" type="button" role="tab" aria-selected="true" aria-controls="panel-news" tabindex="0">速報ニュース</button>
+      <button class="tab-button" id="tab-calendar" type="button" role="tab" aria-selected="false" aria-controls="panel-calendar" tabindex="-1">経済指標</button>
+      <button class="tab-button" id="tab-x" type="button" role="tab" aria-selected="false" aria-controls="panel-x" tabindex="-1">X投稿</button>
+    </nav>
+    <section class="tab-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0">
+      <div class="section-title"><h2>速報ニュース</h2><span id="news-status" aria-live="polite">ニュースを読み込んでいます</span></div>
+      <div class="news-filter-row"><label for="news-source-filter">情報源</label><select id="news-source-filter"><option value="all">すべて</option></select></div>
+      <section class="feed" id="news-feed" aria-label="速報ニュース"><div class="empty">Supabaseからニュースを読み込んでいます…</div></section>
+    </section>
+    <section class="tab-panel" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" tabindex="0" hidden>
+      <article class="card">
+        <div class="label">今後14日間・重要度ランク付き <span id="calendar-status" aria-live="polite">更新確認中</span></div>
+        <h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。実績は発表前は「未発表」です。よく使う指標名は日本語で表示します。</p>
+        <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
+        <p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p>
+      </article>
+    </section>
+    <section class="tab-panel" id="panel-x" role="tabpanel" aria-labelledby="tab-x" tabindex="0" hidden>
+      <article class="card">
+        <div class="label">公開Xリストの投稿</div>
+        <h2 style="font-size:19px;margin:10px 0 8px">X投稿</h2>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">追加したアカウントの投稿をXの公式タイムラインで表示します。表示には公開リストが必要です。日本語訳や重要度判定は行いません。</p>
+        <div class="x-timeline"><a class="twitter-timeline" data-theme="dark" data-height="650" href="https://x.com/i/lists/2104983692594839644">FX速報リストの投稿</a></div>
+        <a class="x-open-list" href="https://x.com/i/lists/2104983692594839644" target="_blank" rel="noopener noreferrer">Xでリストを開く ↗</a>
+      </article>
+    </section>
+    <p class="foot">個人向けの情報整理用ダッシュボードです。重要度とドル円への影響は、ニュース見出し等のキーワードによる簡易な目安で、AIによる分析や売買推奨ではありません。内容を誤判定する場合があります。投資判断の前に、必ず情報源の原文をご確認ください。</p>
+  </main>
+  <script>
+    const SUPABASE_URL = "https://swmbphjtvtkjrnvkytxw.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_y2K68m77MF9DYV55qFQorg_nC6DflY4";
+    const feed = document.getElementById("news-feed");
+    const newsStatus = document.getElementById("news-status");
+    const connectionStatus = document.getElementById("connection-status");
+    const calendarFeed = document.getElementById("calendar-feed");
+    const calendarStatus = document.getElementById("calendar-status");
+    const newsSourceFilter = document.getElementById("news-source-filter");
+    const tabButtons = [...document.querySelectorAll('[role="tab"]')];
+    let newsItems = [];
+    let newsUpdatedAt = "";
+    let xWidgetsLoading = false;
 
-import email.utils
-import html
-import json
-import os
-import re
-import sys
-import urllib.error
-import urllib.parse
-import urllib.request
-import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
-from html.parser import HTMLParser
+    newsSourceFilter.addEventListener("change", renderNewsList);
 
+    function activateTab(button, moveFocus = false) {
+      tabButtons.forEach(tab => {
+        const selected = tab === button;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+      });
+      if (button.id === "tab-x") loadXWidgets();
+      if (moveFocus) button.focus();
+    }
 
-BLOOMBERG_SEARCH = (
-    "site:bloomberg.com/jp/news/articles (ドル円 OR USD/JPY OR 円相場 OR 為替介入 OR 円安 OR 円高 OR "
-    "日銀 OR 日本銀行 OR 日銀会合 OR FRB OR FOMC OR パウエル OR 金融政策 OR 政策金利 OR 利上げ OR 利下げ OR "
-    "米金利 OR 米雇用 OR 雇用統計 OR 非農業部門 OR 米インフレ OR 米CPI OR 米消費者物価 OR PCE OR "
-    "米国債 OR 日本国債 OR 米財務省 OR 日米金融 OR 日米貿易 OR 米関税)"
-)
-BLOOMBERG_RSS = "https://news.google.com/rss/search?" + urllib.parse.urlencode({
-    "q": BLOOMBERG_SEARCH,
-    "hl": "ja",
-    "gl": "JP",
-    "ceid": "JP:ja",
-})
+    function loadXWidgets() {
+      if (xWidgetsLoading || window.twttr?.widgets) return;
+      xWidgetsLoading = true;
+      const script = document.createElement("script");
+      script.src = "https://platform.x.com/widgets.js";
+      script.async = true;
+      script.charset = "utf-8";
+      script.onerror = () => { xWidgetsLoading = false; };
+      document.body.append(script);
+    }
 
-FEEDS = (
-    ("日本銀行", "https://www.boj.or.jp/rss/whatsnew.xml", True),
-    ("財務省", "https://www.mof.go.jp/news.rss", True),
-    ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_monetary.xml", False),
-    ("ブルームバーグ日本語", BLOOMBERG_RSS, True),
-)
-MAX_ITEMS_PER_FEED = 20
+    tabButtons.forEach((button, index) => {
+      button.addEventListener("click", () => activateTab(button));
+      button.addEventListener("keydown", event => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+        event.preventDefault();
+        const direction = event.key === "ArrowRight" ? 1 : -1;
+        activateTab(tabButtons[(index + direction + tabButtons.length) % tabButtons.length], true);
+      });
+    });
 
+    function addTag(parent, text, alert = false) {
+      if (!text) return;
+      const tag = document.createElement("span");
+      tag.className = alert ? "tag alert" : "tag";
+      tag.textContent = text;
+      parent.append(tag);
+    }
 
-def classify_release(source: str, title: str, description: str) -> tuple[int, str, str]:
-    """Return a cautious keyword-based importance and USD/JPY direction estimate."""
-    text = f"{title} {description}".lower()
+    function updatedAtText() {
+      return new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+    }
 
-    yen_strengthening = (
-        "利上げ", "政策金利を引き上げ", "金利を引き上げ", "金融引き締め", "国債買入れ減額",
-        "円買い介入", "為替介入", "yen-buying intervention", "intervention in the foreign exchange market",
-        "raise interest rates", "rate hike", "increase the federal funds rate", "monetary tightening",
-        "reduce bond purchases", "quantitative tightening",
-    )
-    yen_weakening = (
-        "利下げ", "政策金利を引き下げ", "金利を引き下げ", "金融緩和", "国債買入れ増額",
-        "円売り介入", "yen-selling intervention", "cut interest rates", "rate cut",
-        "lower the federal funds rate", "monetary easing", "increase bond purchases",
-        "quantitative easing",
-    )
-    high_impact_terms = (
-        "金融政策決定会合", "政策金利", "利上げ", "利下げ", "為替介入", "円買い介入", "円売り介入",
-        "fomc", "federal funds rate", "interest rate decision", "monetary policy decision",
-        "rate hike", "rate cut", "yen-buying intervention", "yen-selling intervention",
-        "intervention in the foreign exchange market",
-    )
+    function sourceLabel(source) {
+      if (source === "日本銀行") return "日銀";
+      if (source === "Federal Reserve") return "FRB";
+      if (source === "ブルームバーグ日本語") return "ブルームバーグ";
+      return source || "情報源不明";
+    }
 
-    # Rate decisions by the Fed move USD/JPY in the opposite direction to
-    # equivalent BOJ/MOF actions; do not infer a direction from generic news.
-    if any(term in text for term in yen_strengthening):
-        if source == "Federal Reserve":
-            return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
-        return 5, "USD/JPY下落しやすい（円高要因）", "金融政策・為替"
-    if any(term in text for term in yen_weakening):
-        if source == "Federal Reserve":
-            return 5, "USD/JPY下落しやすい（ドル安要因）", "金融政策"
-        return 5, "USD/JPY上昇しやすい（円安要因）", "金融政策・為替"
-    if any(term in text for term in high_impact_terms):
-        return 5, "方向は内容次第", "金融政策・為替"
+    function renderNewsList() {
+      const selected = newsSourceFilter.value;
+      const items = selected === "all" ? newsItems : newsItems.filter(item => sourceLabel(item.source) === selected);
+      feed.replaceChildren();
+      if (!items.length) {
+        feed.innerHTML = `<div class="empty">${newsItems.length ? "この情報源の記事はありません。" : "ニュースはまだ登録されていません。"}</div>`;
+      } else {
+        items.forEach(item => feed.append(renderNews(item)));
+      }
+      newsStatus.textContent = `表示 ${items.length}/${newsItems.length}件 · 更新 ${newsUpdatedAt}`;
+    }
 
-    return 2, "方向は内容次第", "公式発表"
+    function renderNews(item) {
+      const article = document.createElement("article");
+      article.className = "news";
 
+      const date = item.published_at || item.fetched_at;
+      const time = document.createElement("div");
+      time.className = "time";
+      time.textContent = date
+        ? new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short" }).format(new Date(date))
+        : "日時不明";
 
-class TextExtractor(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.parts: list[str] = []
+      const headline = document.createElement("div");
+      headline.className = "headline";
+      const title = document.createElement("strong");
+      if (item.url && /^https:\/\//i.test(item.url)) {
+        const link = document.createElement("a");
+        link.href = item.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = item.japanese_text || item.title || "（タイトルなし）";
+        title.append(link);
+      } else {
+        title.textContent = item.japanese_text || item.title || "（タイトルなし）";
+      }
+      headline.append(title);
 
-    def handle_data(self, data: str) -> None:
-        self.parts.append(data)
+      const summaryText = item.summary || item.original_text;
+      if (summaryText) {
+        const summary = document.createElement("div");
+        summary.textContent = summaryText;
+        headline.append(summary);
+      }
 
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      addTag(meta, item.source ? `情報源：${item.source}` : "情報源：不明");
+      addTag(meta, item.category);
+      if (item.verified) addTag(meta, "確認済み");
+      headline.append(meta);
 
-def clean_text(value: str | None) -> str:
-    if not value:
-        return ""
-    parser = TextExtractor()
-    parser.feed(value)
-    text = html.unescape(" ".join(parser.parts))
-    return re.sub(r"\s+", " ", text).strip()
+      const impact = document.createElement("div");
+      impact.className = "impact";
+      const stars = Number.isFinite(Number(item.importance)) && item.importance
+        ? `重要度 ${"★".repeat(Math.max(1, Math.min(5, Number(item.importance))) )}`
+        : "影響判定 —";
+      impact.textContent = item.usd_jpy_impact ? `${stars} · ${item.usd_jpy_impact}` : stars;
 
+      article.append(time, headline, impact);
+      return article;
+    }
 
-def local_name(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1].lower()
+    async function loadNews() {
+      const endpoint = new URL(`${SUPABASE_URL}/rest/v1/news_items`);
+      endpoint.search = new URLSearchParams({
+        select: "source,title,original_text,japanese_text,summary,url,published_at,fetched_at,category,importance,usd_jpy_impact,verified",
+        order: "published_at.desc.nullslast,fetched_at.desc",
+        limit: "30"
+      });
 
+      try {
+        const response = await fetch(endpoint, {
+          headers: { apikey: SUPABASE_PUBLISHABLE_KEY }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const items = await response.json();
+        newsItems = items;
+        newsUpdatedAt = updatedAtText();
+        connectionStatus.textContent = "● Supabase接続済み";
+        const options = [...new Set(items.map(item => sourceLabel(item.source)))].filter(label => label !== "情報源不明");
+        const previous = newsSourceFilter.value;
+        newsSourceFilter.replaceChildren(new Option("すべて", "all"));
+        options.forEach(label => newsSourceFilter.add(new Option(label, label)));
+        newsSourceFilter.value = options.includes(previous) ? previous : "all";
+        renderNewsList();
+      } catch (error) {
+        connectionStatus.textContent = "● 接続を確認できません";
+        newsStatus.textContent = "ニュースを読み込めませんでした";
+        newsItems = [];
+        feed.replaceChildren();
+        const message = document.createElement("div");
+        message.className = "empty";
+        message.textContent = "Supabaseとの接続に失敗しました。設定とテーブル権限を確認してください。";
+        feed.append(message);
+        newsStatus.textContent = "取得できません";
+      }
+    }
 
-def child_text(element: ET.Element, *names: str) -> str:
-    wanted = {name.lower() for name in names}
-    for child in element.iter():
-        if child is element:
-            continue
-        if local_name(child.tag) in wanted and child.text:
-            return child.text.strip()
-    return ""
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
 
+    function displayValue(value) {
+      if (value === null || value === undefined || value === "") return "—";
+      const numbers = String(value).match(/[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:%|bps?|[KMB])?/gi);
+      return numbers?.length ? numbers.map(number => number.replace(/\s+/g, "")).join(" / ") : "—";
+    }
 
-def item_link(element: ET.Element) -> str:
-    for child in element:
-        if local_name(child.tag) == "link":
-            href = child.attrib.get("href")
-            if href:
-                return href.strip()
-            if child.text:
-                return child.text.strip()
-    return child_text(element, "link")
+    function japaneseEventName(event) {
+      const original = event.title || event.name || event.event || "イベント";
+      const rules = [
+        [/core consumer price index|core cpi/i, "米コア消費者物価指数（コアCPI）"],
+        [/consumer price index|\bcpi\b/i, "米消費者物価指数（CPI）"],
+        [/non[- ]?farm payroll|employment situation|us jobs report/i, "米雇用統計（非農業部門雇用者数）"],
+        [/unemployment rate/i, "米失業率"],
+        [/average hourly earnings/i, "米平均時給"],
+        [/producer price index|\bppi\b/i, "米生産者物価指数（PPI）"],
+        [/personal consumption expenditures|\bpce\b/i, "米個人消費支出（PCE）物価指数"],
+        [/fomc.*minutes|minutes.*fomc/i, "FOMC議事要旨"],
+        [/fomc|federal funds rate|fed.*rate decision/i, "FOMC政策金利発表"],
+        [/initial jobless claims|jobless claims/i, "米新規失業保険申請件数"],
+        [/retail sales/i, "米小売売上高"],
+        [/gross domestic product|\bgdp\b/i, "米国内総生産（GDP）"],
+        [/bank of japan|\bboj\b.*(rate|policy)|(rate|policy).*\bboj\b/i, "日銀金融政策"],
+        [/interest rate decision|central bank.*rate decision/i, "政策金利発表"]
+      ];
+      const match = rules.find(([pattern]) => pattern.test(original));
+      return match ? match[1] : original;
+    }
 
+    function impactRank(value) {
+      const level = String(value ?? "").toLowerCase();
+      if (level === "high" || level === "3") return { text: "重要度：高 ★★★★★", className: "high" };
+      if (level === "medium" || level === "med" || level === "2") return { text: "重要度：中 ★★★☆☆", className: "medium" };
+      if (level === "low" || level === "1") return { text: "重要度：低 ★☆☆☆☆", className: "low" };
+      return { text: "重要度：未設定", className: "" };
+    }
 
-def parse_date(value: str) -> str | None:
-    if not value:
-        return None
-    try:
-        parsed = email.utils.parsedate_to_datetime(value)
-    except (TypeError, ValueError, OverflowError):
-        try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except ValueError:
-            return None
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc).isoformat()
+    function isFxRelevantEvent(event) {
+      const title = [event.title, event.name, event.event].filter(Boolean).join(" ");
+      const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (/holiday|market open|market closed|stock market|exchange hours|trading hours|bank holiday/i.test(title)) return false;
+      const targetRegion = /\b(us|usa|united states|u\.s\.|usd|japan|jpy|jpn)\b|日本|米国|アメリカ/.test(region);
+      const otherRegion = /\b(canada|cad|australia|aud|eurozone|europe|eur|china|cny|uk|gbp|india|inr|switzerland|chf)\b|カナダ|豪州|オーストラリア|ユーロ圏|中国|英国|インド/.test(region);
+      if (targetRegion) return true;
+      if (otherRegion) return false;
+      if (/\b(us|usa|united states|u\.s\.|usd|japan|jpy|boj|fomc|fed|federal reserve)\b|日本|米国|アメリカ|日銀|米雇用統計/.test(title)) return true;
+      if (/core cpi|consumer price|inflation|\bcpi\b|\bpce\b|personal consumption|producer price|\bppi\b|non[- ]?farm|payroll|employment|jobless claims|unemployment|average hourly|\bgdp\b|gross domestic|\bism\b|\bpmi\b|retail sales|interest rate|rate decision|consumer confidence|durable goods|housing starts|industrial production|trade balance/i.test(title)) return true;
+      return false;
+    }
 
+    function renderCalendarEvent(event) {
+      const article = document.createElement("article");
+      article.className = "calendar-event";
 
-def fetch_feed(name: str, url: str, japanese: bool) -> list[dict]:
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": "FXSokuhoPersonalDashboard/1.0", "Accept": "application/rss+xml, application/xml, text/xml"},
-    )
-    with urllib.request.urlopen(request, timeout=25) as response:
-        root = ET.fromstring(response.read())
+      const eventDate = event.time_utc || event.datetime || event.date;
+      const top = document.createElement("div");
+      top.className = "event-top";
+      const time = document.createElement("span");
+      time.textContent = eventDate
+        ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: event.all_day ? undefined : "short" }).format(new Date(eventDate))
+        : "日時未定";
+      const importance = document.createElement("span");
+      const rank = impactRank(event.impact ?? event.importance);
+      importance.className = `event-impact ${rank.className}`;
+      importance.textContent = rank.text;
+      top.append(time, importance);
 
-    elements = [node for node in root.iter() if local_name(node.tag) in {"item", "entry"}]
-    records: list[dict] = []
-    for element in elements[:MAX_ITEMS_PER_FEED]:
-        title = clean_text(child_text(element, "title"))
-        link = item_link(element)
-        if not title or not link.startswith("https://"):
-            continue
-        description = clean_text(child_text(element, "description", "summary", "encoded", "content"))
-        # Google News RSS is only a discovery layer here; store Bloomberg's
-        # headline and link, not its excerpt, to keep the dashboard lightweight.
-        if name == "ブルームバーグ日本語":
-            description = ""
-        published = child_text(element, "pubdate", "published", "updated", "date")
-        importance, impact, category = classify_release(name, title, description)
-        records.append({
-            "source": name,
-            "title": title,
-            "original_text": description[:1200] or None,
-            "japanese_text": title if japanese else None,
-            "summary": description[:1200] or None,
-            "url": link,
-            "published_at": parse_date(published),
-            "category": category,
-            "importance": importance,
-            "usd_jpy_impact": impact,
-            "verified": False,
-        })
-    return records
+      const name = document.createElement("div");
+      name.className = "event-name";
+      name.textContent = japaneseEventName(event);
+      const values = document.createElement("div");
+      values.className = "event-values";
+      [["前回", event.prior ?? event.previous], ["市場予想", event.consensus ?? event.forecast], ["実績", event.actual]].forEach(([label, value]) => {
+        const box = document.createElement("div");
+        box.className = "event-value";
+        const caption = document.createElement("span");
+        caption.textContent = label;
+        const result = document.createElement("strong");
+        result.textContent = displayValue(value);
+        box.append(caption, result);
+        values.append(box);
+      });
 
+      article.append(top, name, values);
+      return article;
+    }
 
-def api_request(url: str, key: str, data: list[dict]) -> list[dict]:
-    body = json.dumps(data, ensure_ascii=False).encode("utf-8")
-    request = urllib.request.Request(
-        url,
-        data=body,
-        method="POST",
-        headers={
-            "apikey": key,
-            "Content-Type": "application/json",
-            "Prefer": "resolution=ignore-duplicates,return=representation",
-        },
-    )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        result = response.read()
-    return json.loads(result.decode("utf-8")) if result else []
+    async function loadCalendar() {
+      const start = new Date();
+      const end = new Date(start);
+      end.setDate(end.getDate() + 14);
+      const endpoint = new URL("https://www.financecalendar.com/wp-json/fc/v1/calendar");
+      endpoint.search = new URLSearchParams({
+        from: localDateString(start),
+        to: localDateString(end),
+        limit: "50"
+      });
 
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
+        calendarFeed.replaceChildren();
+        calendarStatus.textContent = `更新 ${updatedAtText()}`;
+        const relevantEvents = Array.isArray(events) ? events.filter(isFxRelevantEvent) : [];
+        if (relevantEvents.length === 0) {
+          calendarFeed.innerHTML = '<div class="empty">今後14日間にドル円関連の米国・日本のイベントはありません。</div>';
+          return;
+        }
+        relevantEvents.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
+      } catch (error) {
+        calendarFeed.replaceChildren();
+        const message = document.createElement("div");
+        message.className = "empty";
+        message.textContent = "経済イベントを読み込めませんでした。時間をおいて再読み込みしてください。";
+        calendarFeed.append(message);
+        calendarStatus.textContent = "取得できません";
+      }
+    }
 
-def main() -> int:
-    project_url = os.environ["SUPABASE_URL"].rstrip("/")
-    secret_key = os.environ["SUPABASE_SECRET_KEY"]
-
-    records: list[dict] = []
-    failures: list[str] = []
-    for name, url, japanese in FEEDS:
-        try:
-            records.extend(fetch_feed(name, url, japanese))
-            print(f"{name}: feed fetched")
-        except Exception as error:  # noqa: BLE001 - continue so one source cannot block all feeds
-            failures.append(name)
-            print(f"{name}: feed unavailable ({type(error).__name__})", file=sys.stderr)
-
-    if not records and failures:
-        raise RuntimeError("No official feeds could be read")
-
-    rest_url = f"{project_url}/rest/v1/news_items?on_conflict=url"
-    inserted = api_request(rest_url, secret_key, records) if records else []
-    print(f"Supabase: {len(inserted)} new item(s) saved")
-
-    if failures:
-        print(f"Some feeds were unavailable: {', '.join(failures)}", file=sys.stderr)
-    return 0
-
-
-if __name__ == "__main__":
-    try:
-        raise SystemExit(main())
-    except urllib.error.HTTPError as error:
-        print(f"A service returned HTTP {error.code}; check configuration and permissions.", file=sys.stderr)
-        raise SystemExit(1)
-    except Exception as error:  # noqa: BLE001 - avoid printing request details or secret-bearing URLs
-        print(f"News update failed ({type(error).__name__}). Check Actions logs and settings.", file=sys.stderr)
-        raise SystemExit(1)
+    loadNews();
+    loadCalendar();
+    window.setInterval(loadNews, 60_000);
+    window.setInterval(loadCalendar, 5 * 60_000);
+  </script>
+</body>
+</html>
