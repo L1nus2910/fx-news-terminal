@@ -9,16 +9,31 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 
 
+BLOOMBERG_SEARCH = (
+    "site:bloomberg.com/jp/news/articles (ドル円 OR USD/JPY OR 円相場 OR 為替介入 OR 円安 OR 円高 OR "
+    "日銀 OR 日本銀行 OR 日銀会合 OR FRB OR FOMC OR パウエル OR 金融政策 OR 政策金利 OR 利上げ OR 利下げ OR "
+    "米金利 OR 米雇用 OR 雇用統計 OR 非農業部門 OR 米インフレ OR 米CPI OR 米消費者物価 OR PCE OR "
+    "米国債 OR 日本国債 OR 米財務省 OR 日米金融 OR 日米貿易 OR 米関税)"
+)
+BLOOMBERG_RSS = "https://news.google.com/rss/search?" + urllib.parse.urlencode({
+    "q": BLOOMBERG_SEARCH,
+    "hl": "ja",
+    "gl": "JP",
+    "ceid": "JP:ja",
+})
+
 FEEDS = (
     ("日本銀行", "https://www.boj.or.jp/rss/whatsnew.xml", True),
     ("財務省", "https://www.mof.go.jp/news.rss", True),
     ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_monetary.xml", False),
+    ("ブルームバーグ日本語", BLOOMBERG_RSS, True),
 )
 MAX_ITEMS_PER_FEED = 20
 
@@ -46,6 +61,8 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
         "intervention in the foreign exchange market",
     )
 
+    # Rate decisions by the Fed move USD/JPY in the opposite direction to
+    # equivalent BOJ/MOF actions; do not infer a direction from generic news.
     if any(term in text for term in yen_strengthening):
         if source == "Federal Reserve":
             return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
@@ -134,6 +151,10 @@ def fetch_feed(name: str, url: str, japanese: bool) -> list[dict]:
         if not title or not link.startswith("https://"):
             continue
         description = clean_text(child_text(element, "description", "summary", "encoded", "content"))
+        # Google News RSS is only a discovery layer here; store Bloomberg's
+        # headline and link, not its excerpt, to keep the dashboard lightweight.
+        if name == "ブルームバーグ日本語":
+            description = ""
         published = child_text(element, "pubdate", "published", "updated", "date")
         importance, impact, category = classify_release(name, title, description)
         records.append({
