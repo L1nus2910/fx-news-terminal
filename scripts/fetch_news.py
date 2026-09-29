@@ -9,10 +9,9 @@ import os
 import re
 import sys
 import urllib.error
-import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 
 
@@ -22,7 +21,6 @@ FEEDS = (
     ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_monetary.xml", False),
 )
 MAX_ITEMS_PER_FEED = 20
-NOTIFY_WINDOW = timedelta(minutes=25)
 
 
 def classify_release(source: str, title: str, description: str) -> tuple[int, str, str]:
@@ -48,8 +46,6 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
         "intervention in the foreign exchange market",
     )
 
-    # Rate decisions by the Fed move USD/JPY in the opposite direction to
-    # equivalent BOJ/MOF actions; do not infer a direction from generic news.
     if any(term in text for term in yen_strengthening):
         if source == "Federal Reserve":
             return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
@@ -173,31 +169,38 @@ def api_request(url: str, key: str, data: list[dict]) -> list[dict]:
     return json.loads(result.decode("utf-8")) if result else []
 
 
-def send_telegram(token: str, chat_id: str, item: dict) -> None:
-    message = "\n".join((
-        f"📰 {item['source']} 公式速報",
-        item["title"],
-        f"公開日時：{item['published_at'] or '不明'}",
-        item["url"],
-        f"重要度（キーワード仮判定）：{item.get('importance', '—')}/5",
-        f"ドル円への影響目安：{item.get('usd_jpy_impact') or '方向は内容次第'}",
-        "※見出し等に基づく簡易判定です。投資判断には使わず、原文をご確認ください。",
-    ))
-    data = urllib.parse.urlencode({"chat_id": chat_id, "text": message}).encode("utf-8")
-    request = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        data=data,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    with urllib.request.urlopen(request, timeout=20) as response:
-        result = json.loads(response.read().decode("utf-8"))
-    if not result.get("ok"):
-        raise RuntimeError("Telegram API reported that the message was not sent")
-
-
 def main() -> int:
     project_url = os.environ["SUPABASE_URL"].rstrip("/")
     secret_key = os.environ["SUPABASE_SECRET_KEY"]
-    telegram_token = os.environ["TELEGRAM_BOT_TOKEN"]
-    telegram_chat_id = os.environ["TELEGRAM_CHAT_ID"]
-    now = datetime.now(timezone.utc)
+
+    records: list[dict] = []
+    failures: list[str] = []
+    for name, url, japanese in FEEDS:
+        try:
+            records.extend(fetch_feed(name, url, japanese))
+            print(f"{name}: feed fetched")
+        except Exception as error:  # noqa: BLE001 - continue so one source cannot block all feeds
+            failures.append(name)
+            print(f"{name}: feed unavailable ({type(error).__name__})", file=sys.stderr)
+
+    if not records and failures:
+        raise RuntimeError("No official feeds could be read")
+
+    rest_url = f"{project_url}/rest/v1/news_items?on_conflict=url"
+    inserted = api_request(rest_url, secret_key, records) if records else []
+    print(f"Supabase: {len(inserted)} new item(s) saved")
+
+    if failures:
+        print(f"Some feeds were unavailable: {', '.join(failures)}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except urllib.error.HTTPError as error:
+        print(f"A service returned HTTP {error.code}; check configuration and permissions.", file=sys.stderr)
+        raise SystemExit(1)
+    except Exception as error:  # noqa: BLE001 - avoid printing request details or secret-bearing URLs
+        print(f"News update failed ({type(error).__name__}). Check Actions logs and settings.", file=sys.stderr)
+        raise SystemExit(1)
