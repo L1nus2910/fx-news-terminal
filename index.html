@@ -56,7 +56,10 @@
         <div class="label">今後14日間・重要度ランク付き <span id="calendar-status" aria-live="polite">更新確認中</span></div>
         <h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2>
         <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。実績は発表前は「未発表」です。よく使う指標名は日本語で表示します。</p>
-        <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0"><label for="calendar-region-filter">対象地域</label><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select></div>
+        <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0">
+          <label for="calendar-region-filter">対象地域</label><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select>
+          <label for="calendar-importance-filter">重要度</label><select id="calendar-importance-filter"><option value="all">すべて</option><option value="high">高のみ</option><option value="medium">中以上</option></select>
+        </div>
         <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
         <p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p>
       </article>
@@ -81,6 +84,7 @@
     const calendarFeed = document.getElementById("calendar-feed");
     const calendarStatus = document.getElementById("calendar-status");
     const calendarRegionFilter = document.getElementById("calendar-region-filter");
+    const calendarImportanceFilter = document.getElementById("calendar-importance-filter");
     const newsSourceFilter = document.getElementById("news-source-filter");
     const newsImportanceFilter = document.getElementById("news-importance-filter");
     const newsImpactFilter = document.getElementById("news-impact-filter");
@@ -94,6 +98,7 @@
     newsImportanceFilter.addEventListener("change", renderNewsList);
     newsImpactFilter.addEventListener("change", renderNewsList);
     calendarRegionFilter.addEventListener("change", renderCalendarEvents);
+    calendarImportanceFilter.addEventListener("change", renderCalendarEvents);
 
     function activateTab(button, moveFocus = false) {
       tabButtons.forEach(tab => {
@@ -322,15 +327,26 @@
       return "other";
     }
 
+    function eventImportanceScore(event) {
+      const value = String(event.impact ?? event.importance ?? "").toLowerCase();
+      if (value === "high" || value === "3") return 3;
+      if (value === "medium" || value === "med" || value === "2") return 2;
+      if (value === "low" || value === "1") return 1;
+      return 0;
+    }
+
     function renderCalendarEvents() {
       const selectedRegion = calendarRegionFilter.value;
-      const visibleEvents = selectedRegion === "all"
-        ? calendarEvents
-        : calendarEvents.filter(event => eventRegion(event) === selectedRegion);
+      const minimumImportance = calendarImportanceFilter.value === "high" ? 3 : calendarImportanceFilter.value === "medium" ? 2 : 0;
+      const visibleEvents = calendarEvents.filter(event =>
+        (selectedRegion === "all" || eventRegion(event) === selectedRegion) &&
+        eventImportanceScore(event) >= minimumImportance
+      );
       calendarFeed.replaceChildren();
       if (!visibleEvents.length) {
-        const label = selectedRegion === "us" ? "米国" : "日本";
-        calendarFeed.innerHTML = `<div class="empty">${selectedRegion === "all" ? "今後14日間にドル円関連の米国・日本のイベントはありません。" : `今後14日間に${label}のイベントはありません。`}</div>`;
+        const filtersActive = selectedRegion !== "all" || minimumImportance > 0;
+        const label = selectedRegion === "us" ? "米国" : selectedRegion === "japan" ? "日本" : "米国・日本";
+        calendarFeed.innerHTML = `<div class="empty">${calendarEvents.length && filtersActive ? "条件に合うイベントはありません。" : `今後14日間にドル円関連の${label}のイベントはありません。`}</div>`;
         return;
       }
       visibleEvents.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
