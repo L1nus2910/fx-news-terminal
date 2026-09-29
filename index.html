@@ -44,7 +44,7 @@
     </section>
     <section class="tab-panel" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" tabindex="0" hidden>
       <article class="card">
-        <div class="label">今後14日間・重要度ランク付き</div>
+        <div class="label">今後14日間・重要度ランク付き <span id="calendar-status" aria-live="polite">更新確認中</span></div>
         <h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2>
         <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。実績は発表前は「未発表」です。よく使う指標名は日本語で表示します。</p>
         <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
@@ -60,6 +60,7 @@
     const newsStatus = document.getElementById("news-status");
     const connectionStatus = document.getElementById("connection-status");
     const calendarFeed = document.getElementById("calendar-feed");
+    const calendarStatus = document.getElementById("calendar-status");
     const tabButtons = [...document.querySelectorAll('[role="tab"]')];
 
     function activateTab(button, moveFocus = false) {
@@ -88,6 +89,10 @@
       tag.className = alert ? "tag alert" : "tag";
       tag.textContent = text;
       parent.append(tag);
+    }
+
+    function updatedAtText() {
+      return new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" }).format(new Date());
     }
 
     function renderNews(item) {
@@ -159,11 +164,11 @@
         connectionStatus.textContent = "● Supabase接続済み";
         if (!items.length) {
           feed.innerHTML = '<div class="empty">接続できました。ニュースはまだ登録されていません。<br>情報源を設定すると、記事がここに表示されます。</div>';
-          newsStatus.textContent = "記事 0件";
+          newsStatus.textContent = `記事 0件 · 更新 ${updatedAtText()}`;
           return;
         }
         items.forEach(item => feed.append(renderNews(item)));
-        newsStatus.textContent = `最新記事 ${items.length}件`;
+        newsStatus.textContent = `最新記事 ${items.length}件 · 更新 ${updatedAtText()}`;
       } catch (error) {
         connectionStatus.textContent = "● 接続を確認できません";
         newsStatus.textContent = "ニュースを読み込めませんでした";
@@ -172,6 +177,7 @@
         message.className = "empty";
         message.textContent = "Supabaseとの接続に失敗しました。設定とテーブル権限を確認してください。";
         feed.append(message);
+        newsStatus.textContent = "取得できません";
       }
     }
 
@@ -286,6 +292,7 @@
         const payload = await response.json();
         const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
         calendarFeed.replaceChildren();
+        calendarStatus.textContent = `更新 ${updatedAtText()}`;
         const relevantEvents = Array.isArray(events) ? events.filter(isFxRelevantEvent) : [];
         if (relevantEvents.length === 0) {
           calendarFeed.innerHTML = '<div class="empty">今後14日間にドル円関連の米国・日本のイベントはありません。</div>';
@@ -298,11 +305,14 @@
         message.className = "empty";
         message.textContent = "経済イベントを読み込めませんでした。時間をおいて再読み込みしてください。";
         calendarFeed.append(message);
+        calendarStatus.textContent = "取得できません";
       }
     }
 
     loadNews();
     loadCalendar();
+    window.setInterval(loadNews, 60_000);
+    window.setInterval(loadCalendar, 5 * 60_000);
   </script>
 </body>
 </html>
