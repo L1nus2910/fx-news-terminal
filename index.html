@@ -218,6 +218,20 @@
       return { text: "重要度：未設定", className: "" };
     }
 
+    function isFxRelevantEvent(event) {
+      const title = [event.title, event.name, event.event].filter(Boolean).join(" ");
+      const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (/holiday|market open|market closed|stock market|exchange hours|trading hours|bank holiday/i.test(title)) return false;
+      const targetRegion = /\b(us|usa|united states|u\.s\.|usd|japan|jpy|jpn)\b|日本|米国|アメリカ/.test(region);
+      const otherRegion = /\b(canada|cad|australia|aud|eurozone|europe|eur|china|cny|uk|gbp|india|inr|switzerland|chf)\b|カナダ|豪州|オーストラリア|ユーロ圏|中国|英国|インド/.test(region);
+      if (targetRegion) return true;
+      if (otherRegion) return false;
+      if (/\b(us|usa|united states|u\.s\.|usd|japan|jpy|boj|fomc|fed|federal reserve)\b|日本|米国|アメリカ|日銀|米雇用統計/.test(title)) return true;
+      if (/core cpi|consumer price|inflation|\bcpi\b|\bpce\b|personal consumption|producer price|\bppi\b|non[- ]?farm|payroll|employment|jobless claims|unemployment|average hourly|\bgdp\b|gross domestic|\bism\b|\bpmi\b|retail sales|interest rate|rate decision|consumer confidence|durable goods|housing starts|industrial production|trade balance/i.test(title)) return true;
+      return false;
+    }
+
     function renderCalendarEvent(event) {
       const article = document.createElement("article");
       article.className = "calendar-event";
@@ -272,11 +286,12 @@
         const payload = await response.json();
         const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
         calendarFeed.replaceChildren();
-        if (!Array.isArray(events) || events.length === 0) {
-          calendarFeed.innerHTML = '<div class="empty">今後14日間のイベントはありません。</div>';
+        const relevantEvents = Array.isArray(events) ? events.filter(isFxRelevantEvent) : [];
+        if (relevantEvents.length === 0) {
+          calendarFeed.innerHTML = '<div class="empty">今後14日間にドル円関連の米国・日本のイベントはありません。</div>';
           return;
         }
-        events.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
+        relevantEvents.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
       } catch (error) {
         calendarFeed.replaceChildren();
         const message = document.createElement("div");
