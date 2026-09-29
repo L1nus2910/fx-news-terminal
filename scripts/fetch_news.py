@@ -25,6 +25,45 @@ MAX_ITEMS_PER_FEED = 20
 NOTIFY_WINDOW = timedelta(minutes=25)
 
 
+def classify_release(source: str, title: str, description: str) -> tuple[int, str, str]:
+    """Return a cautious keyword-based importance and USD/JPY direction estimate."""
+    text = f"{title} {description}".lower()
+
+    yen_strengthening = (
+        "利上げ", "政策金利を引き上げ", "金利を引き上げ", "金融引き締め", "国債買入れ減額",
+        "円買い介入", "為替介入", "yen-buying intervention", "intervention in the foreign exchange market",
+        "raise interest rates", "rate hike", "increase the federal funds rate", "monetary tightening",
+        "reduce bond purchases", "quantitative tightening",
+    )
+    yen_weakening = (
+        "利下げ", "政策金利を引き下げ", "金利を引き下げ", "金融緩和", "国債買入れ増額",
+        "円売り介入", "yen-selling intervention", "cut interest rates", "rate cut",
+        "lower the federal funds rate", "monetary easing", "increase bond purchases",
+        "quantitative easing",
+    )
+    high_impact_terms = (
+        "金融政策決定会合", "政策金利", "利上げ", "利下げ", "為替介入", "円買い介入", "円売り介入",
+        "fomc", "federal funds rate", "interest rate decision", "monetary policy decision",
+        "rate hike", "rate cut", "yen-buying intervention", "yen-selling intervention",
+        "intervention in the foreign exchange market",
+    )
+
+    # Rate decisions by the Fed move USD/JPY in the opposite direction to
+    # equivalent BOJ/MOF actions; do not infer a direction from generic news.
+    if any(term in text for term in yen_strengthening):
+        if source == "Federal Reserve":
+            return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
+        return 5, "USD/JPY下落しやすい（円高要因）", "金融政策・為替"
+    if any(term in text for term in yen_weakening):
+        if source == "Federal Reserve":
+            return 5, "USD/JPY下落しやすい（ドル安要因）", "金融政策"
+        return 5, "USD/JPY上昇しやすい（円安要因）", "金融政策・為替"
+    if any(term in text for term in high_impact_terms):
+        return 5, "方向は内容次第", "金融政策・為替"
+
+    return 2, "方向は内容次第", "公式発表"
+
+
 class TextExtractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -100,6 +139,7 @@ def fetch_feed(name: str, url: str, japanese: bool) -> list[dict]:
             continue
         description = clean_text(child_text(element, "description", "summary", "encoded", "content"))
         published = child_text(element, "pubdate", "published", "updated", "date")
+        importance, impact, category = classify_release(name, title, description)
         records.append({
             "source": name,
             "title": title,
@@ -108,9 +148,9 @@ def fetch_feed(name: str, url: str, japanese: bool) -> list[dict]:
             "summary": description[:1200] or None,
             "url": link,
             "published_at": parse_date(published),
-            "category": "公式発表",
-            "importance": None,
-            "usd_jpy_impact": "未判定",
+            "category": category,
+            "importance": importance,
+            "usd_jpy_impact": impact,
             "verified": False,
         })
     return records
@@ -139,7 +179,9 @@ def send_telegram(token: str, chat_id: str, item: dict) -> None:
         item["title"],
         f"公開日時：{item['published_at'] or '不明'}",
         item["url"],
-        "ドル円への影響：未判定",
+        f"重要度（キーワード仮判定）：{item.get('importance', '—')}/5",
+        f"ドル円への影響目安：{item.get('usd_jpy_impact') or '方向は内容次第'}",
+        "※見出し等に基づく簡易判定です。投資判断には使わず、原文をご確認ください。",
     ))
     data = urllib.parse.urlencode({"chat_id": chat_id, "text": message}).encode("utf-8")
     request = urllib.request.Request(
@@ -159,45 +201,3 @@ def main() -> int:
     telegram_token = os.environ["TELEGRAM_BOT_TOKEN"]
     telegram_chat_id = os.environ["TELEGRAM_CHAT_ID"]
     now = datetime.now(timezone.utc)
-
-    records: list[dict] = []
-    failures: list[str] = []
-    for name, url, japanese in FEEDS:
-        try:
-            records.extend(fetch_feed(name, url, japanese))
-            print(f"{name}: feed fetched")
-        except Exception as error:  # noqa: BLE001 - continue so one source cannot block all feeds
-            failures.append(name)
-            print(f"{name}: feed unavailable ({type(error).__name__})", file=sys.stderr)
-
-    if not records and failures:
-        raise RuntimeError("No official feeds could be read")
-
-    rest_url = f"{project_url}/rest/v1/news_items?on_conflict=url"
-    inserted = api_request(rest_url, secret_key, records) if records else []
-    print(f"Supabase: {len(inserted)} new item(s) saved")
-
-    cutoff = now - NOTIFY_WINDOW
-    for item in inserted:
-        published = parse_date(item.get("published_at") or "")
-        if not published:
-            continue
-        published_at = datetime.fromisoformat(published.replace("Z", "+00:00"))
-        if cutoff <= published_at <= now + timedelta(minutes=5):
-            send_telegram(telegram_token, telegram_chat_id, item)
-            print("Telegram: recent item sent")
-
-    if failures:
-        print(f"Some feeds were unavailable: {', '.join(failures)}", file=sys.stderr)
-    return 0
-
-
-if __name__ == "__main__":
-    try:
-        raise SystemExit(main())
-    except urllib.error.HTTPError as error:
-        print(f"A service returned HTTP {error.code}; check configuration and permissions.", file=sys.stderr)
-        raise SystemExit(1)
-    except Exception as error:  # noqa: BLE001 - avoid printing request details or secret-bearing URLs
-        print(f"News update failed ({type(error).__name__}). Check Actions logs and settings.", file=sys.stderr)
-        raise SystemExit(1)
