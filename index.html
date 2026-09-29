@@ -56,6 +56,7 @@
         <div class="label">今後14日間・重要度ランク付き <span id="calendar-status" aria-live="polite">更新確認中</span></div>
         <h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2>
         <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。実績は発表前は「未発表」です。よく使う指標名は日本語で表示します。</p>
+        <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0"><label for="calendar-region-filter">対象地域</label><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select></div>
         <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
         <p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p>
       </article>
@@ -79,6 +80,7 @@
     const connectionStatus = document.getElementById("connection-status");
     const calendarFeed = document.getElementById("calendar-feed");
     const calendarStatus = document.getElementById("calendar-status");
+    const calendarRegionFilter = document.getElementById("calendar-region-filter");
     const newsSourceFilter = document.getElementById("news-source-filter");
     const newsImportanceFilter = document.getElementById("news-importance-filter");
     const newsImpactFilter = document.getElementById("news-impact-filter");
@@ -86,10 +88,12 @@
     let newsItems = [];
     let newsUpdatedAt = "";
     let xWidgetsLoading = false;
+    let calendarEvents = [];
 
     newsSourceFilter.addEventListener("change", renderNewsList);
     newsImportanceFilter.addEventListener("change", renderNewsList);
     newsImpactFilter.addEventListener("change", renderNewsList);
+    calendarRegionFilter.addEventListener("change", renderCalendarEvents);
 
     function activateTab(button, moveFocus = false) {
       tabButtons.forEach(tab => {
@@ -309,6 +313,29 @@
       return false;
     }
 
+    function eventRegion(event) {
+      const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code]
+        .filter(Boolean).join(" ").toLowerCase();
+      const title = [event.title, event.name, event.event].filter(Boolean).join(" ").toLowerCase();
+      if (/\b(us|usa|united states|u\.s\.|usd)\b|米国|アメリカ|\bfed\b|\bfomc\b|federal reserve/.test(region + " " + title)) return "us";
+      if (/\b(japan|jpn|jpy|boj)\b|日本|日銀|日本銀行|bank of japan/.test(region + " " + title)) return "japan";
+      return "other";
+    }
+
+    function renderCalendarEvents() {
+      const selectedRegion = calendarRegionFilter.value;
+      const visibleEvents = selectedRegion === "all"
+        ? calendarEvents
+        : calendarEvents.filter(event => eventRegion(event) === selectedRegion);
+      calendarFeed.replaceChildren();
+      if (!visibleEvents.length) {
+        const label = selectedRegion === "us" ? "米国" : "日本";
+        calendarFeed.innerHTML = `<div class="empty">${selectedRegion === "all" ? "今後14日間にドル円関連の米国・日本のイベントはありません。" : `今後14日間に${label}のイベントはありません。`}</div>`;
+        return;
+      }
+      visibleEvents.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
+    }
+
     function renderCalendarEvent(event) {
       const article = document.createElement("article");
       article.className = "calendar-event";
@@ -362,15 +389,11 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
         const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
-        calendarFeed.replaceChildren();
         calendarStatus.textContent = `更新 ${updatedAtText()}`;
-        const relevantEvents = Array.isArray(events) ? events.filter(isFxRelevantEvent) : [];
-        if (relevantEvents.length === 0) {
-          calendarFeed.innerHTML = '<div class="empty">今後14日間にドル円関連の米国・日本のイベントはありません。</div>';
-          return;
-        }
-        relevantEvents.slice(0, 30).forEach(event => calendarFeed.append(renderCalendarEvent(event)));
+        calendarEvents = Array.isArray(events) ? events.filter(isFxRelevantEvent) : [];
+        renderCalendarEvents();
       } catch (error) {
+        calendarEvents = [];
         calendarFeed.replaceChildren();
         const message = document.createElement("div");
         message.className = "empty";
