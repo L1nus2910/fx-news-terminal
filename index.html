@@ -15,7 +15,7 @@
     .calendar-feed{display:grid;gap:9px;margin-top:16px}.calendar-event{padding:12px;background:#111b2b;border:1px solid var(--line);border-radius:12px}.event-top{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.event-impact.high{color:#ff9ba8}.event-impact.medium{color:var(--gold)}.event-impact.low{color:var(--green)}.event-name{font-size:13px;font-weight:700;margin:8px 0;line-height:1.5}.event-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.event-value{padding:6px 0 0;background:transparent;border-top:1px solid var(--line);min-width:0}.event-value span{display:block;color:var(--muted);font-size:10px}.event-value strong{display:block;font-size:13px;margin-top:3px;overflow-wrap:anywhere}.calendar-credit{font-size:10px;color:var(--muted);margin:12px 0 0}.calendar-credit a{color:#9dbbff}
     .tabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;background:#0e1828;border:1px solid var(--line);border-radius:13px}.tab-button{flex:1;min-width:0;border:0;border-radius:9px;padding:11px 9px;background:transparent;color:var(--muted);font:600 13px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;white-space:nowrap}.tab-button[aria-selected="true"]{background:#203553;color:var(--text);box-shadow:0 2px 8px #0003}.tab-button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.tab-panel[hidden]{display:none}.tab-panel>.card{max-width:800px;margin:0 auto}
     .rate-bar{position:sticky;top:8px;z-index:10;margin-bottom:14px}.rate-bar .card{padding:10px 16px;background:#111b2cf2;backdrop-filter:blur(12px);box-shadow:0 8px 24px #0006}.rate-bar .price-head{align-items:center}.rate-bar .rate-widget{min-height:56px;margin-top:4px}.rate-bar .statrow{margin-top:0}
-    .news-filter-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select{max-width:220px;padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}
+    .news-filter-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select{max-width:220px;padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}
     .x-timeline{display:block;margin-top:16px;min-height:520px}.x-timeline .twitter-timeline{color:var(--blue)}.x-open-list{display:inline-block;margin-top:12px;color:var(--blue)}
     @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
   </style>
@@ -44,7 +44,11 @@
     </nav>
     <section class="tab-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0">
       <div class="section-title"><h2>速報ニュース</h2><span id="news-status" aria-live="polite">ニュースを読み込んでいます</span></div>
-      <div class="news-filter-row"><label for="news-source-filter">情報源</label><select id="news-source-filter"><option value="all">すべて</option></select></div>
+      <div class="news-filter-row" aria-label="ニュースの絞り込み">
+        <label for="news-source-filter">情報源</label><select id="news-source-filter"><option value="all">すべて</option></select>
+        <label for="news-importance-filter">重要度</label><select id="news-importance-filter"><option value="all">すべて</option><option value="5">★★★★★のみ</option><option value="4">★★★★以上</option><option value="3">★★★以上</option></select>
+        <label for="news-impact-filter">ドル円</label><select id="news-impact-filter"><option value="all">影響すべて</option><option value="up">上昇要因</option><option value="down">下落要因</option><option value="unclear">方向は内容次第</option></select>
+      </div>
       <section class="feed" id="news-feed" aria-label="速報ニュース"><div class="empty">Supabaseからニュースを読み込んでいます…</div></section>
     </section>
     <section class="tab-panel" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" tabindex="0" hidden>
@@ -76,12 +80,16 @@
     const calendarFeed = document.getElementById("calendar-feed");
     const calendarStatus = document.getElementById("calendar-status");
     const newsSourceFilter = document.getElementById("news-source-filter");
+    const newsImportanceFilter = document.getElementById("news-importance-filter");
+    const newsImpactFilter = document.getElementById("news-impact-filter");
     const tabButtons = [...document.querySelectorAll('[role="tab"]')];
     let newsItems = [];
     let newsUpdatedAt = "";
     let xWidgetsLoading = false;
 
     newsSourceFilter.addEventListener("change", renderNewsList);
+    newsImportanceFilter.addEventListener("change", renderNewsList);
+    newsImpactFilter.addEventListener("change", renderNewsList);
 
     function activateTab(button, moveFocus = false) {
       tabButtons.forEach(tab => {
@@ -135,11 +143,22 @@
     }
 
     function renderNewsList() {
-      const selected = newsSourceFilter.value;
-      const items = selected === "all" ? newsItems : newsItems.filter(item => sourceLabel(item.source) === selected);
+      const selectedSource = newsSourceFilter.value;
+      const minimumImportance = newsImportanceFilter.value === "all" ? 0 : Number(newsImportanceFilter.value);
+      const selectedImpact = newsImpactFilter.value;
+      const items = newsItems.filter(item => {
+        if (selectedSource !== "all" && sourceLabel(item.source) !== selectedSource) return false;
+        if (Number(item.importance || 0) < minimumImportance) return false;
+        const impact = String(item.usd_jpy_impact || "");
+        if (selectedImpact === "up" && !impact.includes("上昇")) return false;
+        if (selectedImpact === "down" && !impact.includes("下落")) return false;
+        if (selectedImpact === "unclear" && !/(方向は内容次第|内容次第|方向は)/.test(impact)) return false;
+        return true;
+      });
       feed.replaceChildren();
       if (!items.length) {
-        feed.innerHTML = `<div class="empty">${newsItems.length ? "この情報源の記事はありません。" : "ニュースはまだ登録されていません。"}</div>`;
+        const filtersActive = selectedSource !== "all" || minimumImportance > 0 || selectedImpact !== "all";
+        feed.innerHTML = `<div class="empty">${newsItems.length ? (filtersActive ? "条件に合うニュースはありません。" : "ニュースはまだ登録されていません。") : "ニュースはまだ登録されていません。"}</div>`;
       } else {
         items.forEach(item => feed.append(renderNews(item)));
       }
