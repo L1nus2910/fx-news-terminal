@@ -55,7 +55,7 @@
       <article class="card">
         <div class="label">今後14日間・重要度ランク付き <span id="calendar-status" aria-live="polite">更新確認中</span></div>
         <h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。— は未公表または未取得です。市場予想は発表前およそ2日から、実績は公式発表後およそ1時間以内に反映されます。イベント名から詳細を確認できます。</p>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。重要度は日米の金融政策・CPI/PCE・米雇用統計を高、それに次ぐ主要指標を中として判定し、データ元のランクも反映します。相場の実際の反応を予測するものではありません。— は未公表または未取得です。イベント名から詳細を確認できます。</p>
         <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0">
           <label for="calendar-region-filter">対象地域</label><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select>
           <label for="calendar-importance-filter">重要度</label><select id="calendar-importance-filter"><option value="all">すべて</option><option value="high">高のみ</option><option value="medium">中以上</option></select>
@@ -308,10 +308,10 @@
     }
 
     function impactRank(value) {
-      const level = String(value ?? "").toLowerCase();
-      if (level === "high" || level === "3") return { text: "重要度：高 ★★★★★", className: "high" };
-      if (level === "medium" || level === "med" || level === "2") return { text: "重要度：中 ★★★☆☆", className: "medium" };
-      if (level === "low" || level === "1") return { text: "重要度：低 ★☆☆☆☆", className: "low" };
+      const level = Number(value);
+      if (level >= 3) return { text: "重要度：高 ★★★★★", className: "high" };
+      if (level === 2) return { text: "重要度：中 ★★★☆☆", className: "medium" };
+      if (level === 1) return { text: "重要度：低 ★☆☆☆☆", className: "low" };
       return { text: "重要度：未設定", className: "" };
     }
 
@@ -340,10 +340,16 @@
 
     function eventImportanceScore(event) {
       const value = String(event.impact ?? event.importance ?? "").toLowerCase();
-      if (value === "high" || value === "3") return 3;
-      if (value === "medium" || value === "med" || value === "2") return 2;
-      if (value === "low" || value === "1") return 1;
-      return 0;
+      const sourceScore = value === "high" || value === "3" ? 3
+        : value === "medium" || value === "med" || value === "2" ? 2
+        : value === "low" || value === "1" ? 1 : 0;
+      const title = [event.title, event.name, event.event].filter(Boolean).join(" ").toLowerCase();
+      const region = eventRegion(event);
+      const topTier = /consumer price index|\bcpi\b|personal consumption expenditures|\bpce\b|non[- ]?farm payroll|\bnfp\b|employment situation|federal funds rate|fed.*rate decision|fomc.*(rate|statement|decision|press conference)|interest rate decision|policy rate decision|bank of japan.*(rate|policy|meeting)|\bboj\b.*(rate|policy|meeting)|(rate|policy|meeting).*\bboj\b|東京都区部|全国.*消費者物価|日本.*コアcpi/;
+      const secondTier = /inflation|producer price index|\bppi\b|gross domestic product|\bgdp\b|retail sales|jobless claims|unemployment|employment|average hourly earnings|wage|\bjolts\b|\badp\b|\bism\b|\bpmi\b|tankan|industrial production|consumer confidence|fomc minutes|meeting minutes|summary of opinions|central bank.*speech|governor.*speech|testimony|intervention/;
+      if ((region === "us" || region === "japan") && topTier.test(title)) return 3;
+      if ((region === "us" || region === "japan") && secondTier.test(title)) return Math.max(sourceScore, 2);
+      return sourceScore;
     }
 
     function renderCalendarEvents() {
@@ -375,7 +381,7 @@
         ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: event.all_day ? undefined : "short" }).format(new Date(eventDate))
         : "日時未定";
       const importance = document.createElement("span");
-      const rank = impactRank(event.impact ?? event.importance);
+      const rank = impactRank(eventImportanceScore(event));
       importance.className = `event-impact ${rank.className}`;
       importance.textContent = rank.text;
       top.append(time, importance);
