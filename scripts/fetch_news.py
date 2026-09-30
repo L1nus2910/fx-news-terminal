@@ -33,6 +33,7 @@ FEEDS = (
     ("日本銀行", "https://www.boj.or.jp/rss/whatsnew.xml", True),
     ("財務省", "https://www.mof.go.jp/news.rss", True),
     ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_monetary.xml", False),
+    ("FRB要人発言", "https://www.federalreserve.gov/feeds/speeches_and_testimony.xml", False),
     ("ブルームバーグ日本語", BLOOMBERG_RSS, True),
 )
 MAX_ITEMS_PER_FEED = 20
@@ -75,13 +76,13 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
     if "円売り介入" in text or "yen-selling intervention" in text:
         return 5, "USD/JPY上昇しやすい（円売り要因）", "金融政策・為替"
     if any(term in text for term in yen_strengthening):
-        if source == "Federal Reserve":
+        if source in {"Federal Reserve", "FRB要人発言"}:
             return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
         if source in {"日本銀行", "財務省"}:
             return 5, "USD/JPY下落しやすい（円高要因）", "金融政策・為替"
         return 5, "方向は記事の文脈次第", "金融政策・為替"
     if any(term in text for term in yen_weakening):
-        if source == "Federal Reserve":
+        if source in {"Federal Reserve", "FRB要人発言"}:
             return 5, "USD/JPY下落しやすい（ドル安要因）", "金融政策"
         if source in {"日本銀行", "財務省"}:
             return 5, "USD/JPY上昇しやすい（円安要因）", "金融政策・為替"
