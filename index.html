@@ -94,7 +94,7 @@
         <div class="label">公開Xリストの投稿</div>
         <h2 style="font-size:19px;margin:10px 0 8px">X投稿</h2>
         <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">追加したアカウントの投稿をXの公式タイムラインで表示します。表示には公開リストが必要です。日本語訳や重要度判定は行いません。</p>
-        <div class="x-timeline"><a class="twitter-timeline" data-theme="dark" data-height="650" href="https://x.com/i/lists/2104983692594839644">FX速報リストの投稿</a></div>
+        <div class="x-timeline" id="x-timeline"><a class="twitter-timeline" data-theme="dark" data-height="650" href="https://twitter.com/i/lists/2104983692594839644">FX速報リストの投稿を読み込んでいます…</a></div>
         <a class="x-open-list" href="https://x.com/i/lists/2104983692594839644" target="_blank" rel="noopener noreferrer">Xでリストを開く ↗</a>
       </article>
     </section>
@@ -146,13 +146,25 @@
     }
 
     function loadXWidgets() {
-      if (xWidgetsLoading || window.twttr?.widgets) return;
+      const timeline = document.getElementById("x-timeline");
+      if (window.twttr?.widgets) {
+        window.twttr.widgets.load(timeline);
+        return;
+      }
+      if (xWidgetsLoading) return;
       xWidgetsLoading = true;
       const script = document.createElement("script");
-      script.src = "https://platform.x.com/widgets.js";
+      script.src = "https://platform.twitter.com/widgets.js";
       script.async = true;
       script.charset = "utf-8";
-      script.onerror = () => { xWidgetsLoading = false; };
+      script.onload = () => {
+        xWidgetsLoading = false;
+        window.twttr?.widgets?.load(timeline);
+      };
+      script.onerror = () => {
+        xWidgetsLoading = false;
+        timeline.innerHTML = '<div class="empty">Xのタイムラインを読み込めませんでした。ブラウザの設定や通信環境で埋め込みが制限されている可能性があります。下のリンクからリストを開けます。</div>';
+      };
       document.body.append(script);
     }
 
