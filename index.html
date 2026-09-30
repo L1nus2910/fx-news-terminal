@@ -39,6 +39,7 @@
     </section>
     <nav class="tabs" role="tablist" aria-label="表示する情報">
       <button class="tab-button" id="tab-news" type="button" role="tab" aria-selected="true" aria-controls="panel-news" tabindex="0">速報ニュース</button>
+      <button class="tab-button" id="tab-speakers" type="button" role="tab" aria-selected="false" aria-controls="panel-speakers" tabindex="-1">要人発言</button>
       <button class="tab-button" id="tab-calendar" type="button" role="tab" aria-selected="false" aria-controls="panel-calendar" tabindex="-1">経済指標</button>
       <button class="tab-button" id="tab-market" type="button" role="tab" aria-selected="false" aria-controls="panel-market" tabindex="-1">通貨強弱</button>
       <button class="tab-button" id="tab-x" type="button" role="tab" aria-selected="false" aria-controls="panel-x" tabindex="-1">X投稿</button>
@@ -52,6 +53,18 @@
         <label for="news-impact-filter">ドル円</label><select id="news-impact-filter"><option value="all">影響すべて</option><option value="up">上昇要因</option><option value="down">下落要因</option><option value="unclear">方向は内容次第</option></select>
       </div>
       <section class="feed" id="news-feed" aria-label="速報ニュース"><div class="empty">Supabaseからニュースを読み込んでいます…</div></section>
+    </section>
+    <section class="tab-panel" id="panel-speakers" role="tabpanel" aria-labelledby="tab-speakers" tabindex="0" hidden>
+      <article class="card">
+        <div class="label">FRB・日銀・財務当局・政府関係者 <span id="speaker-status" aria-live="polite">ニュースを読み込んでいます</span></div>
+        <h2 style="font-size:19px;margin:10px 0 8px">要人発言 Tracker</h2>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">ドル円に関係する金融政策・為替・物価・雇用・貿易などの発言を、発表元の見出しとリンクで表示します。発言者や関連度は見出しの自動判定です。</p>
+        <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0">
+          <label for="speaker-region-filter">発言者</label><select id="speaker-region-filter"><option value="all">すべて</option><option value="fed">FRB</option><option value="japan">日本</option><option value="us">米政府</option></select>
+        </div>
+        <section class="feed" id="speaker-feed" aria-live="polite"><div class="empty">発言情報を読み込んでいます…</div></section>
+        <p class="market-credit">主な取得元：<a href="https://www.federalreserve.gov/feeds/feeds.htm" target="_blank" rel="noopener noreferrer">FRB公式スピーチ・証言RSS</a>、<a href="https://www.mof.go.jp/news.rss" target="_blank" rel="noopener noreferrer">財務省RSS</a>、日本銀行、ブルームバーグ日本語。元記事で内容と文脈をご確認ください。</p>
+      </article>
     </section>
     <section class="tab-panel" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" tabindex="0" hidden>
       <article class="card">
@@ -101,6 +114,9 @@
     const newsSearch = document.getElementById("news-search");
     const newsImportanceFilter = document.getElementById("news-importance-filter");
     const newsImpactFilter = document.getElementById("news-impact-filter");
+    const speakerFeed = document.getElementById("speaker-feed");
+    const speakerStatus = document.getElementById("speaker-status");
+    const speakerRegionFilter = document.getElementById("speaker-region-filter");
     const marketStatus = document.getElementById("market-status");
     const forexTableHost = document.getElementById("forex-table-host");
     const tabButtons = [...document.querySelectorAll('[role="tab"]')];
@@ -116,6 +132,7 @@
     newsImpactFilter.addEventListener("change", renderNewsList);
     calendarRegionFilter.addEventListener("change", renderCalendarEvents);
     calendarImportanceFilter.addEventListener("change", renderCalendarEvents);
+    speakerRegionFilter.addEventListener("change", renderSpeakerTracker);
     function activateTab(button, moveFocus = false) {
       tabButtons.forEach(tab => {
         const selected = tab === button;
@@ -164,6 +181,7 @@
     function sourceLabel(source) {
       if (source === "日本銀行") return "日銀";
       if (source === "Federal Reserve") return "FRB";
+      if (source === "FRB要人発言") return "FRB";
       if (source === "ブルームバーグ日本語") return "ブルームバーグ";
       return source || "情報源不明";
     }
@@ -186,7 +204,7 @@
           if (!searchable.includes(query)) return false;
         }
         return true;
-      });
+      }).slice(0, 30);
       feed.replaceChildren();
       if (!items.length) {
         const filtersActive = query !== "" || selectedSource !== "all" || minimumImportance > 0 || selectedImpact !== "all";
@@ -195,6 +213,55 @@
         items.forEach(item => feed.append(renderNews(item)));
       }
       newsStatus.textContent = `表示 ${items.length}/${newsItems.length}件 · 更新 ${newsUpdatedAt}`;
+    }
+
+    function speakerProfile(item) {
+      const text = [item.title, item.original_text, item.japanese_text, item.summary].filter(Boolean).join(" ");
+      const source = item.source || "";
+      const macro = /(為替|ドル円|円安|円高|円相場|介入|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|米国債|通貨|currency|foreign exchange|dollar|yen|interest rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds)/i.test(text);
+      const speech = /(発言|講演|会見|談話|挨拶|声明|証言|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|outlook)/i.test(text);
+      if (!macro) return null;
+      const profiles = [
+        { match: /Jerome H\. Powell|Jerome Powell|Powell|パウエル/i, name: "パウエル FRB議長", region: "fed" },
+        { match: /Michelle W\. Bowman|Michelle Bowman|Bowman|ボウマン/i, name: "ボウマン FRB理事", region: "fed" },
+        { match: /Christopher J\. Waller|Christopher Waller|Waller|ウォラー/i, name: "ウォラー FRB理事", region: "fed" },
+        { match: /Lisa D\. Cook|Lisa Cook|Cook|クック/i, name: "クック FRB理事", region: "fed" },
+        { match: /Philip N\. Jefferson|Philip Jefferson|Jefferson|ジェファーソン/i, name: "ジェファーソン FRB副議長", region: "fed" },
+        { match: /Bessent|ベッセント|Treasury Secretary|米財務長官/i, name: "米財務長官", region: "us" },
+        { match: /Trump|トランプ|President of the United States|米大統領|大統領/i, name: "米大統領", region: "us" },
+        { match: /Ueda|植田|日銀総裁|Bank of Japan Governor/i, name: "日銀総裁", region: "japan" },
+        { match: /日銀副総裁|Himino|氷見野|Uchida|内田/i, name: "日銀副総裁", region: "japan" },
+        { match: /財務大臣|財務相|Finance Minister|財務官|Vice-Minister of Finance/i, name: "財務大臣・財務官", region: "japan" },
+        { match: /首相|総理|Prime Minister/i, name: "日本の首相", region: "japan" }
+      ];
+      const person = profiles.find(profile => profile.match.test(text));
+      if (person) return speech || ["FRB要人発言", "日本銀行", "財務省"].includes(source) ? person : null;
+      if (source === "FRB要人発言" && speech) return { name: "FRB理事・地区連銀総裁", region: "fed" };
+      if (source === "日本銀行" && speech) return { name: "日銀要人", region: "japan" };
+      if (source === "財務省" && speech) return { name: "財務省要人", region: "japan" };
+      return null;
+    }
+
+    function renderSpeakerTracker() {
+      if (!speakerFeed) return;
+      const region = speakerRegionFilter.value;
+      const matches = newsItems.map(item => ({ item, speaker: speakerProfile(item) }))
+        .filter(row => row.speaker && (region === "all" || row.speaker.region === region))
+        .slice(0, 50);
+      speakerFeed.replaceChildren();
+      if (!matches.length) {
+        const empty = document.createElement("div"); empty.className = "empty";
+        empty.textContent = newsItems.length ? "該当する発言はまだありません。ニュース取得後に表示します。" : "発言情報を読み込んでいます…";
+        speakerFeed.append(empty);
+      } else {
+        matches.forEach(({ item, speaker }) => {
+          const article = renderNews(item);
+          const meta = article.querySelector(".meta");
+          if (meta) addTag(meta, `発言者：${speaker.name}`, true);
+          speakerFeed.append(article);
+        });
+      }
+      speakerStatus.textContent = `${matches.length}件 · 更新 ${newsUpdatedAt || "取得中"}`;
     }
 
     function renderNews(item) {
@@ -253,7 +320,7 @@
       endpoint.search = new URLSearchParams({
         select: "source,title,original_text,japanese_text,summary,url,published_at,fetched_at,category,importance,usd_jpy_impact,verified",
         order: "published_at.desc.nullslast,fetched_at.desc",
-        limit: "30"
+        limit: "100"
       });
 
       try {
@@ -271,6 +338,7 @@
         options.forEach(label => newsSourceFilter.add(new Option(label, label)));
         newsSourceFilter.value = options.includes(previous) ? previous : "all";
         renderNewsList();
+        renderSpeakerTracker();
       } catch (error) {
         connectionStatus.textContent = "● 接続を確認できません";
         newsStatus.textContent = "ニュースを読み込めませんでした";
@@ -281,6 +349,7 @@
         message.textContent = "Supabaseとの接続に失敗しました。設定とテーブル権限を確認してください。";
         feed.append(message);
         newsStatus.textContent = "取得できません";
+        renderSpeakerTracker();
       }
     }
 
@@ -303,6 +372,13 @@
       };
       document.head.append(forexScript);
 
+    }
+
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
     function displayValue(value) {
