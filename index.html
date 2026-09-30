@@ -17,7 +17,80 @@
     .news-filter-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select,.news-filter-row input[type=search]{max-width:220px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}.news-filter-row input[type=search]{width:190px}
     .x-timeline{display:block;margin-top:16px;min-height:520px}.x-timeline .twitter-timeline{color:var(--blue)}.x-open-list{display:inline-block;margin-top:12px;color:var(--blue)}
     #panel-market>.card{max-width:1120px}.market-section{margin-top:20px}.market-section h3{font-size:14px;margin:0 0 9px}.market-widget{width:100%;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#111b2b}.market-widget forex-table{display:block;width:100%;min-height:430px}.market-note{font-size:11px;color:var(--muted);line-height:1.65;margin:12px 0 0}.market-credit{font-size:10px;color:var(--muted);line-height:1.6;margin-top:14px}.market-credit a{color:#9dbbff}
-    @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
+    /* Layout refinements */
+    :root{--bg:#09111f;--panel:#111c2e;--line:#263852;--muted:#a9b8cc;--text:#f1f6ff}
+    body{line-height:1.5;background:radial-gradient(ellipse at 50% -24%,#203b5e 0,transparent 58%),var(--bg)}
+    .wrap{width:min(1200px,calc(100% - 48px));padding-top:30px}
+    .top{margin-bottom:20px}
+    .notice{max-width:940px;margin:0 auto 18px;padding:11px 15px}
+    .rate-bar{max-width:940px;margin:0 auto 16px;top:8px}
+    .rate-bar .card{padding:9px 18px}
+    .rate-bar .rate-widget{min-height:52px}
+    .tabs{max-width:940px;margin:0 auto 20px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:5px}
+    .tab-button{padding:10px 6px;font-size:13px}
+    .tab-panel{max-width:940px;margin:0 auto}
+    .tab-panel>.card{max-width:none;padding:24px}
+    #panel-market>.card{max-width:none}
+    .section-title{margin:0 2px 12px}
+    .section-title h2{font-size:18px}
+    .feed{gap:9px}
+    .news{padding:16px 18px;grid-template-columns:68px minmax(0,1fr) auto;gap:14px}
+    .headline{font-size:14px;line-height:1.65}
+    .news-filter-row{justify-content:flex-start;margin:0 0 14px;padding:12px;background:#0d1727;border:1px solid var(--line);border-radius:12px;gap:8px}
+    .news-filter-row select,.news-filter-row input[type=search]{max-width:none;min-height:38px}
+    .news-filter-row input[type=search]{width:min(220px,100%)}
+    .calendar-feed{gap:10px}
+    .calendar-event{padding:14px 16px}
+    .event-name{font-size:14px}
+    .event-values{gap:14px}
+    .market-section{margin-top:22px}
+    .market-widget forex-table{min-height:460px}
+    .foot{max-width:940px;margin:18px auto 0}
+    button,select,input{touch-action:manipulation}
+    @media(min-width:721px){.news-filter-row label{margin-left:6px}.news-filter-row label:first-child{margin-left:0}}
+    @media(max-width:720px){
+      .wrap{width:min(100% - 24px,600px);padding:16px 0 32px}
+      .top{align-items:flex-start;gap:10px;margin-bottom:15px}
+      .logo{width:38px;height:38px}
+      .brand h1{font-size:17px}
+      .brand p{font-size:11px}
+      .status{font-size:10px;padding:6px 8px;margin-top:2px}
+      .notice{font-size:12px;margin-bottom:12px;padding:10px 12px}
+      .rate-bar{top:4px;margin-bottom:12px}
+      .rate-bar .card{padding:8px 12px;border-radius:14px}
+      .rate-bar .rate-widget{min-height:46px;margin-top:2px}
+      .rate-bar .statrow{gap:18px}
+      .tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-bottom:14px;padding:4px;border-radius:12px}
+      .tab-button{padding:9px 3px;font-size:12px;white-space:normal;line-height:1.25;min-height:38px}
+      .tab-panel>.card{padding:16px;border-radius:14px}
+      .section-title{align-items:flex-start;gap:8px;margin:0 1px 10px}
+      .section-title h2{font-size:16px}
+      .section-title span{font-size:10px;text-align:right}
+      .news{grid-template-columns:48px minmax(0,1fr);gap:8px 10px;padding:13px 12px}
+      .time{font-size:11px}
+      .headline{font-size:13px}
+      .impact{grid-column:2;justify-self:start}
+      .news-filter-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 10px;margin:0 0 12px;padding:10px}
+      .news-filter-row select,.news-filter-row input[type=search]{width:100%;max-width:none;min-width:0;padding:8px;font-size:12px}
+      .news-filter-row input[type=search]{width:100%}
+      .calendar-event{padding:12px}
+      .event-values{gap:9px}
+      .event-value span{font-size:9px}
+      .event-value strong{font-size:12px}
+      .x-timeline{min-height:420px}
+      .market-widget forex-table{min-height:400px}
+      .foot{font-size:10px;margin-top:14px}
+    }
+    @media(max-width:390px){
+      .wrap{width:calc(100% - 18px)}
+      .brand{gap:8px}
+      .brand p{max-width:155px}
+      .status{font-size:9px;padding:6px 7px}
+      .tab-button{font-size:11px}
+      .statrow{gap:12px}
+      .rate-bar .statrow div{font-size:10px}
+    }
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
   </style>
 </head>
 <body>
