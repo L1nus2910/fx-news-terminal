@@ -16,6 +16,7 @@
     .rate-bar{position:sticky;top:8px;z-index:10;margin-bottom:14px}.rate-bar .card{padding:10px 16px;background:#111b2cf2;backdrop-filter:blur(12px);box-shadow:0 8px 24px #0006}.rate-bar .price-head{align-items:center}.rate-bar .rate-widget{min-height:56px;margin-top:4px}.rate-bar .statrow{margin-top:0}
     .news-filter-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select,.news-filter-row input[type=search]{max-width:220px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}.news-filter-row input[type=search]{width:190px}
     .x-timeline{display:block;margin-top:16px;min-height:520px}.x-timeline .twitter-timeline{color:var(--blue)}.x-open-list{display:inline-block;margin-top:12px;color:var(--blue)}
+    #panel-market>.card{max-width:1120px}.market-section{margin-top:20px}.market-section h3{font-size:14px;margin:0 0 9px}.market-widget{width:100%;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#111b2b}.market-widget forex-table{display:block;width:100%;min-height:430px}.market-note{font-size:11px;color:var(--muted);line-height:1.65;margin:12px 0 0}.market-credit{font-size:10px;color:var(--muted);line-height:1.6;margin-top:14px}.market-credit a{color:#9dbbff}
     @media(max-width:720px){.wrap{width:min(100% - 22px,560px);padding-top:18px}.grid{grid-template-columns:1fr}.card{padding:16px}.news{grid-template-columns:52px 1fr;gap:10px}.impact{grid-column:2}.status{font-size:10px;padding:7px 9px}.brand h1{font-size:17px}}
   </style>
 </head>
@@ -39,6 +40,7 @@
     <nav class="tabs" role="tablist" aria-label="表示する情報">
       <button class="tab-button" id="tab-news" type="button" role="tab" aria-selected="true" aria-controls="panel-news" tabindex="0">速報ニュース</button>
       <button class="tab-button" id="tab-calendar" type="button" role="tab" aria-selected="false" aria-controls="panel-calendar" tabindex="-1">経済指標</button>
+      <button class="tab-button" id="tab-market" type="button" role="tab" aria-selected="false" aria-controls="panel-market" tabindex="-1">通貨強弱</button>
       <button class="tab-button" id="tab-x" type="button" role="tab" aria-selected="false" aria-controls="panel-x" tabindex="-1">X投稿</button>
     </nav>
     <section class="tab-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0">
@@ -62,6 +64,16 @@
         </div>
         <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
         <p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p>
+      </article>
+    </section>
+    <section class="tab-panel" id="panel-market" role="tabpanel" aria-labelledby="tab-market" tabindex="0" hidden>
+      <article class="card">
+        <div class="label">市場の値動き <span id="market-status" aria-live="polite">タブを開くと読み込みます</span></div>
+        <h2 style="font-size:19px;margin:10px 0 8px">通貨強弱</h2>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">主要通貨ペアの値動きをもとに、各通貨の強弱を確認できます。</p>
+        <div class="market-section"><h3>通貨強弱ヒートマップ（前日比）</h3><div class="market-widget" id="forex-table-host"><div class="empty">表示準備中…</div></div></div>
+        <p class="market-note">通貨強弱ヒートマップは前日比の参考表示です。将来の値動きや売買判断を示すものではありません。</p>
+        <p class="market-credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView Forex Table</a></p>
       </article>
     </section>
     <section class="tab-panel" id="panel-x" role="tabpanel" aria-labelledby="tab-x" tabindex="0" hidden>
@@ -89,11 +101,14 @@
     const newsSearch = document.getElementById("news-search");
     const newsImportanceFilter = document.getElementById("news-importance-filter");
     const newsImpactFilter = document.getElementById("news-impact-filter");
+    const marketStatus = document.getElementById("market-status");
+    const forexTableHost = document.getElementById("forex-table-host");
     const tabButtons = [...document.querySelectorAll('[role="tab"]')];
     let newsItems = [];
     let newsUpdatedAt = "";
     let xWidgetsLoading = false;
     let calendarEvents = [];
+    let marketLoaded = false;
 
     newsSourceFilter.addEventListener("change", renderNewsList);
     newsSearch.addEventListener("input", renderNewsList);
@@ -101,7 +116,6 @@
     newsImpactFilter.addEventListener("change", renderNewsList);
     calendarRegionFilter.addEventListener("change", renderCalendarEvents);
     calendarImportanceFilter.addEventListener("change", renderCalendarEvents);
-
     function activateTab(button, moveFocus = false) {
       tabButtons.forEach(tab => {
         const selected = tab === button;
@@ -110,6 +124,7 @@
         document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
       });
       if (button.id === "tab-x") loadXWidgets();
+      if (button.id === "tab-market") loadMarketWidgets();
       if (moveFocus) button.focus();
     }
 
@@ -269,11 +284,25 @@
       }
     }
 
-    function localDateString(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
+    function loadMarketWidgets() {
+      if (marketLoaded) return;
+      marketLoaded = true;
+      marketStatus.textContent = "市場データを読み込み中";
+
+      const forexScript = document.createElement("script");
+      forexScript.type = "module";
+      forexScript.src = "https://widgets.tradingview-widget.com/w/en/tv-forex-table.js";
+      forexScript.onload = () => {
+        const table = document.createElement("tv-forex-table");
+        table.setAttribute("displayed-value", "dailyChange");
+        table.setAttribute("heatmap", "");
+        forexTableHost.replaceChildren(table);
+      };
+      forexScript.onerror = () => {
+        forexTableHost.innerHTML = '<div class="empty">通貨強弱を読み込めませんでした。<a href="https://www.tradingview.com/heatmap/forex/" target="_blank" rel="noopener noreferrer">TradingViewでForexヒートマップを開く</a></div>';
+      };
+      document.head.append(forexScript);
+
     }
 
     function displayValue(value) {
