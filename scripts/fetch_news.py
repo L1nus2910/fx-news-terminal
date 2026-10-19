@@ -18,24 +18,43 @@ from html.parser import HTMLParser
 
 BLOOMBERG_SEARCH = (
     "site:bloomberg.com/jp/news/articles (ドル円 OR USD/JPY OR 円相場 OR 為替介入 OR 円安 OR 円高 OR "
-    "日銀 OR 日本銀行 OR 日銀会合 OR FRB OR FOMC OR パウエル OR 金融政策 OR 政策金利 OR 利上げ OR 利下げ OR "
+    "日銀 OR 日本銀行 OR 日銀会合 OR FRB OR FOMC OR 金融政策 OR 政策金利 OR 利上げ OR 利下げ OR "
     "米金利 OR 米雇用 OR 雇用統計 OR 非農業部門 OR 米インフレ OR 米CPI OR 米消費者物価 OR PCE OR "
-    "米国債 OR 日本国債 OR 米財務省 OR 日米金融 OR 日米貿易 OR 米関税)"
+    "米国債 OR 日本国債 OR 米財務省 OR 日米金融 OR 日米貿易 OR 米関税 OR 豪ドル OR 豪中銀 OR RBA)"
 )
-BLOOMBERG_RSS = "https://news.google.com/rss/search?" + urllib.parse.urlencode({
-    "q": BLOOMBERG_SEARCH,
-    "hl": "ja",
-    "gl": "JP",
-    "ceid": "JP:ja",
-})
+
+
+def google_news(query: str) -> str:
+    return "https://news.google.com/rss/search?" + urllib.parse.urlencode({
+        "q": query, "hl": "ja", "gl": "JP", "ceid": "JP:ja",
+    })
+
+
+# 要人発言：為替に影響しやすい日本・米国・豪州の要人を報道から拾う（直近2日）
+SPEAKER_QUERIES = (
+    ("要人発言（日本）",
+     "(高市首相 OR 首相 OR 片山財務相 OR 財務相 OR 財務大臣 OR 三村財務官 OR 財務官 OR 官房長官) "
+     "(為替 OR 円安 OR 円高 OR 介入 OR 円相場) when:2d"),
+    ("要人発言（日銀）",
+     "(植田総裁 OR 日銀総裁 OR 日銀副総裁 OR 氷見野 OR 内田副総裁 OR 日銀審議委員) when:2d"),
+    ("要人発言（米国）",
+     "(トランプ大統領 OR ベッセント財務長官 OR 米財務長官 OR ウォーシュ議長 OR FRB議長 OR FRB理事 OR 連銀総裁) "
+     "(ドル OR 円 OR 金利 OR 利下げ OR 利上げ OR 関税 OR 為替 OR インフレ) when:2d"),
+    ("要人発言（豪州）",
+     "(豪中銀 OR 豪準備銀行 OR RBA OR ブロック総裁 OR ハウザー副総裁 OR チャーマーズ財務相 OR アルバニージー首相) when:2d"),
+)
 
 FEEDS = (
     ("日本銀行", "https://www.boj.or.jp/rss/whatsnew.xml", True),
     ("財務省", "https://www.mof.go.jp/news.rss", True),
     ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_monetary.xml", False),
     ("FRB要人発言", "https://www.federalreserve.gov/feeds/speeches_and_testimony.xml", False),
-    ("ブルームバーグ日本語", BLOOMBERG_RSS, True),
+    ("RBA", "https://www.rba.gov.au/rss/rss-cb-media-releases.xml", False),
+    ("RBA要人発言", "https://www.rba.gov.au/rss/rss-cb-speeches.xml", False),
+    ("ブルームバーグ日本語", google_news(BLOOMBERG_SEARCH), True),
+    *((name, google_news(query), True) for name, query in SPEAKER_QUERIES),
 )
+GOOGLE_NEWS_SOURCES = {"ブルームバーグ日本語", *(name for name, _ in SPEAKER_QUERIES)}
 MAX_ITEMS_PER_FEED = 20
 
 
@@ -75,6 +94,13 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
         return 5, "USD/JPY下落しやすい（円買い要因）", "金融政策・為替"
     if "円売り介入" in text or "yen-selling intervention" in text:
         return 5, "USD/JPY上昇しやすい（円売り要因）", "金融政策・為替"
+    aud_source = source in {"RBA", "RBA要人発言", "要人発言（豪州）"} or "豪中銀" in text or "reserve bank of australia" in text
+    if aud_source and any(term in text for term in yen_strengthening + ("hike", "increase the cash rate", "raise the cash rate")):
+        return 5, "豪ドル高要因（AUD/JPY・AUD/USD上昇しやすい）", "金融政策（豪州）"
+    if aud_source and any(term in text for term in yen_weakening + ("reduce the cash rate", "lower the cash rate")):
+        return 5, "豪ドル安要因（AUD/JPY・AUD/USD下落しやすい）", "金融政策（豪州）"
+    if aud_source and ("cash rate" in text or "monetary policy decision" in text or "政策金利" in text):
+        return 5, "方向は内容次第（豪ドルに影響）", "金融政策（豪州）"
     if any(term in text for term in yen_strengthening):
         if source in {"Federal Reserve", "FRB要人発言"}:
             return 5, "USD/JPY上昇しやすい（ドル高要因）", "金融政策"
@@ -89,6 +115,10 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
         return 5, "方向は記事の文脈次第", "金融政策・為替"
     if any(term in text for term in high_impact_terms):
         return 5, "方向は内容次第", "金融政策・為替"
+    if source.startswith("要人発言") or source in {"FRB要人発言", "RBA要人発言"}:
+        if any(term in text for term in ("為替", "円安", "円高", "介入", "急速な", "投機", "過度な変動", "currency", "exchange rate")):
+            return 5, "方向は内容次第（為替発言）", "要人発言"
+        return 4, "方向は内容次第", "要人発言"
     if any(term in text for term in major_data_terms):
         return 4, "発表内容次第（変動注意）", "重要経済指標"
 
@@ -171,7 +201,7 @@ def fetch_feed(name: str, url: str, japanese: bool) -> list[dict]:
         description = clean_text(child_text(element, "description", "summary", "encoded", "content"))
         # Google News RSS is only a discovery layer here; store Bloomberg's
         # headline and link, not its excerpt, to keep the dashboard lightweight.
-        if name == "ブルームバーグ日本語":
+        if name in GOOGLE_NEWS_SOURCES:
             description = ""
         published = child_text(element, "pubdate", "published", "updated", "date")
         importance, impact, category = classify_release(name, title, description)

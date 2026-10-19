@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>FX速報 AI | USD/JPY</title>
-  <meta name="description" content="ドル円の速報ニュース、要人発言、経済指標、通貨強弱、チャートをまとめて確認できる個人向けFXダッシュボード。">
+  <title>FX速報 AI | USD/JPY・AUD</title>
+  <meta name="description" content="ドル円・豪ドル円・豪ドル米ドルの速報ニュース、要人発言、日米豪の経済指標、チャートをまとめて確認できる個人向けFXダッシュボード。">
   <meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0C1322" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,6 +40,7 @@
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
       <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 5.5 16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
       <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-4-6 4V5.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
       <symbol id="i-bookmark-fill" viewBox="0 0 24 24"><path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-4-6 4V5.5a1 1 0 0 1 1-1z" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
       <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4.5V8h-3.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -64,25 +65,19 @@
         <button class="icon-btn back-btn" id="back-btn" type="button" aria-label="ホームに戻る" hidden><svg><use href="#i-back"/></svg></button>
         <a class="brand" href="#/" aria-label="FX速報 AI ホーム">
           <span class="brand-mark" aria-hidden="true"><span>¥</span></span>
-          <span class="brand-text"><strong>FX速報 AI</strong><small id="screen-title">ドル円ダッシュボード</small></span>
+          <span class="brand-text"><strong>FX速報 AI</strong><small id="screen-title">ドル円・豪ドル ダッシュボード</small></span>
         </a>
         <div class="topbar-actions">
           <button class="status-chip" id="connection-status" type="button" aria-live="polite" title="タップで最新に更新"><span class="dot"></span><span class="status-text">確認中</span></button>
           <button class="icon-btn" id="theme-toggle" type="button" aria-label="ダークモードに切り替え"><svg class="ico-sun"><use href="#i-sun"/></svg><svg class="ico-moon"><use href="#i-moon"/></svg></button>
         </div>
       </div>
+      <div class="alert-bar" id="alert-bar" aria-live="assertive" hidden></div>
     </header>
 
     <!-- 常時表示レート -->
-    <section class="ratebar" aria-label="USD/JPY の現在レート">
-      <div class="ratebar-inner">
-        <div class="pair">
-          <span class="pair-flags" aria-hidden="true"><i class="flag us"></i><i class="flag jp"></i></span>
-          <span class="pair-name"><strong>USD/JPY</strong><small>米ドル / 日本円</small></span>
-        </div>
-        <div class="ticker-host" id="ticker-host"></div>
-        <a class="ratebar-link" href="#/chart" aria-label="チャートを開く"><svg><use href="#i-right"/></svg></a>
-      </div>
+    <section class="ratebar" aria-label="USD/JPY・AUD/JPY・AUD/USD の現在レート">
+      <div class="ratebar-inner" id="ticker-host"></div>
     </section>
 
     <main class="screens" id="main">
@@ -123,8 +118,8 @@
               <div class="block-head"><h2>メニュー</h2></div>
               <nav class="tiles" aria-label="機能メニュー">
                 <a class="tile" href="#/news" style="--tile:var(--hue-news)"><svg><use href="#t-news"/></svg><span>速報ニュース</span><small id="sub-news">公式・報道</small></a>
-                <a class="tile" href="#/speakers" style="--tile:var(--hue-speak)"><svg><use href="#t-speak"/></svg><span>要人発言</span><small id="sub-speak">FRB・日銀・財務省</small></a>
-                <a class="tile" href="#/calendar" style="--tile:var(--hue-cal)"><svg><use href="#t-cal"/></svg><span>経済指標</span><small id="sub-cal">米国・日本</small></a>
+                <a class="tile" href="#/speakers" style="--tile:var(--hue-speak)"><svg><use href="#t-speak"/></svg><span>要人発言</span><small id="sub-speak">日米豪の要人</small></a>
+                <a class="tile" href="#/calendar" style="--tile:var(--hue-cal)"><svg><use href="#t-cal"/></svg><span>経済指標</span><small id="sub-cal">日米豪</small></a>
                 <a class="tile" href="#/market" style="--tile:var(--hue-heat)"><svg><use href="#t-heat"/></svg><span>通貨強弱</span><small>前日比</small></a>
                 <a class="tile" href="#/x" style="--tile:var(--hue-x)"><svg><use href="#t-x"/></svg><span>X投稿</span><small>公開リスト</small></a>
                 <a class="tile" href="#/chart" style="--tile:var(--hue-chart)"><svg><use href="#t-chart"/></svg><span>チャート</span><small>通貨ペア切替</small></a>
@@ -155,7 +150,7 @@
           </div>
           <div class="select-row">
             <label class="select"><span>情報源</span><select id="news-source-filter"><option value="all">すべて</option></select></label>
-            <label class="select"><span>ドル円</span><select id="news-impact-filter"><option value="all">影響すべて</option><option value="up">上昇要因</option><option value="down">下落要因</option><option value="unclear">方向は内容次第</option></select></label>
+            <label class="select"><span>影響</span><select id="news-impact-filter"><option value="all">影響すべて</option><option value="up">上昇・上振れ</option><option value="down">下落・下振れ</option><option value="unclear">方向は内容次第</option></select></label>
           </div>
         </div>
         <div class="list-card" id="news-feed"><div class="empty">ニュースを読み込んでいます</div></div>
@@ -168,13 +163,14 @@
           <h1>要人発言</h1>
           <p id="speaker-status" aria-live="polite">読み込んでいます</p>
         </div>
-        <p class="lead">FRB・日銀・財務当局・政府関係者の、金融政策や為替に関わる発言を見出しから拾って表示します。発言者は自動判定です。</p>
+        <p class="lead">日本・米国・豪州の首相・大統領、財務大臣・財務官、中央銀行（日銀・FRB・RBA）など、為替に影響しやすい要人の発言を、公式発表と報道の見出しから拾って表示します。発言者は自動判定です。</p>
         <div class="filters">
           <div class="seg" role="radiogroup" aria-label="発言者" id="speaker-region">
             <button type="button" role="radio" data-value="all" aria-checked="true">すべて</button>
             <button type="button" role="radio" data-value="fed" aria-checked="false">FRB</button>
             <button type="button" role="radio" data-value="japan" aria-checked="false">日本</button>
             <button type="button" role="radio" data-value="us" aria-checked="false">米政府</button>
+            <button type="button" role="radio" data-value="au" aria-checked="false">豪州</button>
           </div>
         </div>
         <div class="list-card" id="speaker-feed"><div class="empty">発言情報を読み込んでいます</div></div>
@@ -186,7 +182,7 @@
           <h1>経済指標</h1>
           <p id="calendar-status" aria-live="polite">更新確認中</p>
         </div>
-        <p class="lead">米国・日本の今後14日間のイベントです。重要度は日米の金融政策・CPI/PCE・米雇用統計を「高」として判定しています。— は未公表または未取得です。</p>
+        <p class="lead">日本・米国・豪州の指標を、前回・予想・結果つきで表示します。結果は発表から1〜数分で反映されます。重要度「高」は政策金利・CPI・雇用統計など、相場が大きく動きやすいものです。</p>
         <div class="filters">
           <div class="seg-row">
             <div class="seg" role="radiogroup" aria-label="期間" id="calendar-scope">
@@ -200,12 +196,12 @@
             </div>
           </div>
           <div class="select-row">
-            <label class="select"><span>地域</span><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select></label>
+            <label class="select"><span>地域</span><select id="calendar-region-filter"><option value="all">日本・米国・豪州</option><option value="japan">日本</option><option value="us">米国</option><option value="au">豪州</option></select></label>
             <label class="select"><span>重要度</span><select id="calendar-importance-filter"><option value="all">すべて</option><option value="high">高のみ</option><option value="medium">中以上</option></select></label>
           </div>
         </div>
         <div class="calendar" id="calendar-feed"><div class="empty">経済イベントを読み込んでいます</div></div>
-        <p class="credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>　参考：<a href="https://www.oanda.jp/lab-education/calendar/" target="_blank" rel="noopener noreferrer">OANDA 経済指標カレンダー</a></p>
+        <p class="credit">指標データ：<a href="https://www.tradingview.com/economic-calendar/" target="_blank" rel="noopener noreferrer">TradingView 経済指標カレンダー</a>（自動取得）。発表元の数字と食い違う場合は発表元を優先してください。</p>
       </section>
 
       <!-- 通貨強弱 -->
@@ -227,9 +223,9 @@
         </div>
         <div class="pair-chips" id="pair-chips" role="radiogroup" aria-label="通貨ペア">
           <button type="button" role="radio" data-symbol="FX:USDJPY" aria-checked="true">USD/JPY</button>
-          <button type="button" role="radio" data-symbol="FX:EURJPY" aria-checked="false">EUR/JPY</button>
-          <button type="button" role="radio" data-symbol="FX:GBPJPY" aria-checked="false">GBP/JPY</button>
           <button type="button" role="radio" data-symbol="FX:AUDJPY" aria-checked="false">AUD/JPY</button>
+          <button type="button" role="radio" data-symbol="FX:AUDUSD" aria-checked="false">AUD/USD</button>
+          <button type="button" role="radio" data-symbol="FX:EURJPY" aria-checked="false">EUR/JPY</button>
           <button type="button" role="radio" data-symbol="FX:EURUSD" aria-checked="false">EUR/USD</button>
           <button type="button" role="radio" data-symbol="TVC:DXY" aria-checked="false">ドル指数</button>
         </div>
@@ -281,6 +277,10 @@
               <button type="button" role="radio" data-value="light" aria-checked="false">ライト</button>
               <button type="button" role="radio" data-value="dark" aria-checked="false">ダーク</button>
             </div>
+          </div>
+          <div class="setting">
+            <div><strong>重要指標の通知</strong><small>日米豪の重要度「高」の指標を、発表5分前と結果発表時にこの端末へ通知します（このページを開いている間）</small></div>
+            <button class="primary-btn small" id="notify-btn" type="button">オンにする</button>
           </div>
           <div class="setting" id="install-row" hidden>
             <div><strong>アプリとして追加</strong><small>ホーム画面から1タップで開けます</small></div>

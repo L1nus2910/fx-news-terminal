@@ -145,17 +145,20 @@ const widgets = {
 
   ticker() {
     const host = $("#ticker-host");
-    const t = document.createElement("tv-single-ticker");
-    t.setAttribute("symbol", "FX:USDJPY");
-    t.setAttribute("hide-market-status", "");
-    t.setAttribute("size", "large");
-    t.setAttribute("theme", theme.effective);
-    t.setAttribute("force-theme", "");
-    t.setAttribute("locale", "ja");
-    t.setAttribute("transparent", "");
-    host.replaceChildren(t);
-    loadScript("https://widgets.tradingview-widget.com/w/en/tv-single-ticker.js", { module: true })
-      .catch(() => host.replaceChildren(el("a", { href: "https://www.tradingview.com/symbols/USDJPY/", target: "_blank", rel: "noopener noreferrer", class: "block-link", text: "レートを読み込めません。TradingViewで開く" })));
+    const pairs = [["FX:USDJPY", "USD/JPY"], ["FX:AUDJPY", "AUD/JPY"], ["FX:AUDUSD", "AUD/USD"]];
+    host.replaceChildren(...pairs.map(([symbol, label]) => {
+      const chart = document.createElement("tv-mini-chart");
+      chart.setAttribute("symbol", symbol);
+      chart.setAttribute("theme", theme.effective);
+      chart.setAttribute("transparent", "");
+      chart.setAttribute("line-chart-type", "Baseline");
+      chart.setAttribute("time-frame", "1D");
+      chart.setAttribute("locale", "ja");
+      return el("div", { class: "rate-card" }, chart,
+        el("a", { class: "rate-link", href: `#/chart?symbol=${encodeURIComponent(symbol)}`, "aria-label": `${label}のチャートを開く` }));
+    }));
+    loadScript("https://widgets.tradingview-widget.com/w/en/tv-mini-chart.js", { module: true })
+      .catch(() => host.replaceChildren(el("a", { href: "https://www.tradingview.com/symbols/USDJPY/", target: "_blank", rel: "noopener noreferrer", class: "block-link rate-fallback", text: "レートを読み込めません。TradingViewで開く" })));
   },
 
   market() {
@@ -216,23 +219,24 @@ const widgets = {
   x() {
     this.xShown = true;
     const host = $("#x-timeline");
-    const a = el("a", {
-      class: "twitter-timeline",
-      "data-theme": theme.effective,
-      "data-height": "720",
-      "data-chrome": "noheader nofooter transparent",
-      "data-lang": "ja",
-      "data-dnt": "true",
-      href: `https://twitter.com/i/lists/${X_LIST_ID}`
-    }, "リストの投稿を読み込んでいます…");
-    host.replaceChildren(a);
-    const render = () => window.twttr?.widgets?.load(host);
-    if (window.twttr?.widgets) { render(); return; }
-    loadScript("https://platform.twitter.com/widgets.js").then(render).catch(() => {
-      host.replaceChildren(el("div", { class: "empty" },
-        el("strong", { text: "タイムラインを表示できませんでした" }),
-        "ブラウザの設定や拡張機能で埋め込みが止められている可能性があります。上のボタンからXで開けます。"));
-    });
+    host.replaceChildren(el("div", { class: "empty", text: "リストの投稿を読み込んでいます…" }));
+    const fail = () => host.replaceChildren(el("div", { class: "empty" },
+      el("strong", { text: "タイムラインを表示できませんでした" }),
+      "ブラウザの設定や拡張機能（広告ブロックなど）で埋め込みが止められている可能性があります。上のボタンからXで開けます。"));
+    const render = () => {
+      const box = el("div");
+      host.replaceChildren(box);
+      // リストはIDで指定する（URL形式だと正しく読み込めない）
+      window.twttr.widgets.createTimeline(
+        { sourceType: "list", id: X_LIST_ID },
+        box,
+        { theme: theme.effective, height: 760, chrome: "noheader nofooter transparent", dnt: true, lang: "ja" }
+      ).then(widget => { if (!widget) fail(); }).catch(fail);
+    };
+    if (window.twttr?.widgets?.createTimeline) { render(); return; }
+    loadScript("https://platform.twitter.com/widgets.js")
+      .then(() => (window.twttr?.ready ? window.twttr.ready(render) : render()))
+      .catch(fail);
   },
 
   rethemeAll() {
@@ -255,7 +259,7 @@ $("#pair-chips").addEventListener("click", event => {
    ルーティング（#/news など）
    ========================================================= */
 const SCREENS = {
-  home: "ドル円ダッシュボード",
+  home: "ドル円・豪ドル ダッシュボード",
   news: "速報ニュース",
   speakers: "要人発言",
   calendar: "経済指標",
@@ -286,7 +290,7 @@ function route() {
   });
   $("#screen-title").textContent = SCREENS[name];
   $("#back-btn").hidden = name === "home";
-  document.title = name === "home" ? "FX速報 AI | USD/JPY" : `${SCREENS[name]} | FX速報 AI`;
+  document.title = name === "home" ? "FX速報 AI | USD/JPY・AUD" : `${SCREENS[name]} | FX速報 AI`;
 
   if (name === "news" && params.has("importance")) {
     setSeg($("#news-importance"), params.get("importance"));
@@ -297,7 +301,11 @@ function route() {
     renderCalendarEvents();
   }
   if (name === "market" && !widgets.marketShown) widgets.market();
-  if (name === "chart" && !widgets.chartShown) widgets.chart();
+  if (name === "chart" && params.has("symbol") && /^[A-Z]+:[A-Z0-9]+$/.test(params.get("symbol"))) {
+    widgets.chartSymbol = params.get("symbol");
+    save("fx-chart-symbol", widgets.chartSymbol);
+    widgets.chart();
+  } else if (name === "chart" && !widgets.chartShown) widgets.chart();
   if (name === "x") showX();
   if (name === "saved") renderSaved();
   if (changed) window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
@@ -313,7 +321,8 @@ $("#back-btn").addEventListener("click", () => {
 /* =========================================================
    ニュース
    ========================================================= */
-let newsItems = [];
+let newsItems = [];   // 表示用（ニュース＋重要指標）
+let rawNews = [];     // Supabase から取得したニュース
 let newsUpdatedAt = "";
 let savedNews = store("fx-saved-news", {});
 
@@ -329,7 +338,9 @@ function sourceLabel(source) {
   if (source === "日本銀行") return "日銀";
   if (source === "Federal Reserve") return "FRB";
   if (source === "FRB要人発言") return "FRB";
+  if (source === "RBA要人発言") return "RBA";
   if (source === "ブルームバーグ日本語") return "ブルームバーグ";
+  if (String(source || "").startsWith("要人発言")) return "要人報道";
   return source || "情報源不明";
 }
 function newsDate(item) {
@@ -337,8 +348,8 @@ function newsDate(item) {
   return Number.isNaN(d.getTime()) || d.getTime() === 0 ? null : d;
 }
 function impactTone(impact = "") {
-  if (impact.includes("上昇")) return "up";
-  if (impact.includes("下落")) return "down";
+  if (/上昇|豪ドル高|上振れ/.test(impact)) return "up";
+  if (/下落|豪ドル安|下振れ/.test(impact)) return "down";
   return "";
 }
 function newsTitle(item) { return item.japanese_text || item.title || "（タイトルなし）"; }
@@ -353,7 +364,7 @@ function renderNewsRow(item, { speaker } = {}) {
     time.textContent = "—";
   }
 
-  const url = safeUrl(item.url);
+  const url = safeUrl(item.url) || (item.isEvent ? "" : "");
   const title = el("h3", { class: "row-title" },
     url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: newsTitle(item) }) : newsTitle(item));
 
@@ -398,8 +409,12 @@ function renderNewsRow(item, { speaker } = {}) {
   }, icon("i-bookmark", "off"), icon("i-bookmark-fill", "on"));
   saveBtn.dataset.key = key;
 
-  const row = el("article", { class: "row" }, time, body, saveBtn);
-  return row;
+  if (item.isEvent) {
+    time.prepend(cflag(item.event.country));
+    const released = Boolean(item.event.actual);
+    return el("article", { class: `row event lv-${item.event.level}${released ? " done" : " upcoming"}` }, time, body, saveBtn);
+  }
+  return el("article", { class: "row" }, time, body, saveBtn);
 }
 
 function filteredNews() {
@@ -414,8 +429,8 @@ function filteredNews() {
     const importance = Number(item.importance || 0);
     if (exactFive ? importance !== 5 : importance < minimumImportance) return false;
     const impact = String(item.usd_jpy_impact || "");
-    if (selectedImpact === "up" && !impact.includes("上昇")) return false;
-    if (selectedImpact === "down" && !impact.includes("下落")) return false;
+    if (selectedImpact === "up" && impactTone(impact) !== "up") return false;
+    if (selectedImpact === "down" && impactTone(impact) !== "down") return false;
     if (selectedImpact === "unclear" && !/(方向は内容次第|内容次第|方向は)/.test(impact)) return false;
     if (query) {
       const searchable = [item.source, item.title, item.original_text, item.japanese_text, item.summary, item.category, impact]
@@ -460,7 +475,7 @@ function renderPickup() {
   const dots = $("#pickup-dots");
   if (!newsItems.length) return;
   const now = Date.now();
-  const recent = newsItems.filter(i => { const d = newsDate(i); return d && now - d.getTime() < 72 * 3600e3; });
+  const recent = newsItems.filter(i => { const d = newsDate(i); return d && now - d.getTime() < 72 * 3600e3 && d.getTime() <= now + 60e3; });
   const pool = (recent.length ? recent : newsItems).slice()
     .sort((a, b) => (Number(b.importance || 0) - Number(a.importance || 0)) || ((newsDate(b)?.getTime() || 0) - (newsDate(a)?.getTime() || 0)))
     .slice(0, 4);
@@ -496,11 +511,11 @@ $("#pickup-track").addEventListener("scroll", event => {
 
 function renderHomeNews() {
   const host = $("#home-news");
-  const items = newsItems.slice(0, 5);
+  const items = newsItems.slice(0, 6);
   host.replaceChildren(...(items.length ? items.map(i => renderNewsRow(i)) : [el("div", { class: "empty", text: "ニュースはまだありません" })]));
   host.append(el("a", { class: "block-link", href: "#/news", style: "display:block;text-align:center;padding:12px;border-top:1px solid var(--line)", text: `すべてのニュースを見る（${newsItems.length}件）` }));
   $("#home-news-meta").textContent = newsUpdatedAt ? `${newsUpdatedAt}更新` : "";
-  const todays = newsItems.filter(i => { const d = newsDate(i); return d && dayKey(d) === dayKey(new Date()); }).length;
+  const todays = rawNews.filter(i => { const d = newsDate(i); return d && dayKey(d) === dayKey(new Date()); }).length;
   $("#sub-news").textContent = todays ? `今日 ${todays}件` : "公式・報道";
 }
 
@@ -525,16 +540,12 @@ async function loadNews() {
   try {
     const response = await fetch(endpoint, { headers: { apikey: SUPABASE_PUBLISHABLE_KEY } });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    newsItems = await response.json();
+    rawNews = await response.json();
     newsUpdatedAt = fmtTime.format(new Date());
     chip.className = "status-chip ok";
     $(".status-text", chip).textContent = `${newsUpdatedAt} 更新`;
     chip.title = `最終更新 ${newsUpdatedAt}（タップで更新）`;
 
-    const options = [...new Set(newsItems.map(item => sourceLabel(item.source)))].filter(l => l !== "情報源不明");
-    const previous = newsSourceFilter.value;
-    newsSourceFilter.replaceChildren(new Option("すべて", "all"), ...options.map(l => new Option(l, l)));
-    newsSourceFilter.value = options.includes(previous) ? previous : "all";
   } catch {
     chip.className = "status-chip err";
     $(".status-text", chip).textContent = "接続できません";
@@ -547,6 +558,17 @@ async function loadNews() {
     }
     return;
   }
+  mergeNews();
+}
+
+/* ニュースと重要指標（予定・結果）を1本の流れにまとめる */
+function mergeNews() {
+  newsItems = [...eventNewsItems(), ...rawNews]
+    .sort((a, b) => (newsDate(b)?.getTime() || 0) - (newsDate(a)?.getTime() || 0));
+  const options = [...new Set(newsItems.map(item => sourceLabel(item.source)))].filter(l => l !== "情報源不明");
+  const previous = newsSourceFilter.value;
+  newsSourceFilter.replaceChildren(new Option("すべて", "all"), ...options.map(l => new Option(l, l)));
+  newsSourceFilter.value = options.includes(previous) ? previous : "all";
   renderNewsList();
   renderSpeakerTracker();
   renderPickup();
@@ -560,27 +582,45 @@ async function loadNews() {
 segmented($("#speaker-region"), renderSpeakerTracker);
 
 function speakerProfile(item) {
+  if (item.isEvent) return null;
   const text = [item.title, item.original_text, item.japanese_text, item.summary].filter(Boolean).join(" ");
   const source = item.source || "";
-  const macro = /(為替|ドル円|円安|円高|円相場|介入|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|米国債|通貨|currency|foreign exchange|dollar|yen|interest rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds)/i.test(text);
-  const speech = /(発言|講演|会見|談話|挨拶|声明|証言|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|outlook)/i.test(text);
-  if (!macro) return null;
+  const curated = source.startsWith("要人発言") || ["FRB要人発言", "RBA要人発言", "日本銀行", "財務省", "RBA"].includes(source);
+  const macro = /(為替|ドル円|円安|円高|円相場|豪ドル|介入|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|国債|通貨|景気|currency|foreign exchange|dollar|yen|interest rate|cash rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds|outlook)/i.test(text);
+  const speech = /(発言|講演|会見|談話|挨拶|声明|証言|述べ|語っ|語る|示唆|強調|けん制|牽制|言及|表明|指摘|インタビュー|記者団|コメント|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|interview)/i.test(text);
+  if (!macro && !curated) return null;
   const profiles = [
-    { match: /Jerome H\. Powell|Jerome Powell|Powell|パウエル/i, name: "パウエル FRB議長", region: "fed" },
-    { match: /Michelle W\. Bowman|Michelle Bowman|Bowman|ボウマン/i, name: "ボウマン FRB理事", region: "fed" },
-    { match: /Christopher J\. Waller|Christopher Waller|Waller|ウォラー/i, name: "ウォラー FRB理事", region: "fed" },
-    { match: /Lisa D\. Cook|Lisa Cook|Cook|クック/i, name: "クック FRB理事", region: "fed" },
-    { match: /Philip N\. Jefferson|Philip Jefferson|Jefferson|ジェファーソン/i, name: "ジェファーソン FRB副議長", region: "fed" },
-    { match: /Bessent|ベッセント|Treasury Secretary|米財務長官/i, name: "米財務長官", region: "us" },
-    { match: /Trump|トランプ|President of the United States|米大統領|大統領/i, name: "米大統領", region: "us" },
-    { match: /Ueda|植田|日銀総裁|Bank of Japan Governor/i, name: "日銀総裁", region: "japan" },
-    { match: /日銀副総裁|Himino|氷見野|Uchida|内田/i, name: "日銀副総裁", region: "japan" },
-    { match: /財務大臣|財務相|Finance Minister|財務官|Vice-Minister of Finance/i, name: "財務大臣・財務官", region: "japan" },
-    { match: /首相|総理|Prime Minister/i, name: "日本の首相", region: "japan" }
+    // 豪州
+    { match: /ブロック総裁|Bullock|豪中銀総裁|RBA Governor/i, name: "ブロック RBA総裁", region: "au" },
+    { match: /ハウザー|Hauser/i, name: "ハウザー RBA副総裁", region: "au" },
+    { match: /チャーマーズ|Chalmers|豪財務相|Australian Treasurer/i, name: "チャーマーズ豪財務相", region: "au" },
+    { match: /アルバニージー|Albanese|豪首相|Australian Prime Minister/i, name: "アルバニージー豪首相", region: "au" },
+    // 米国
+    { match: /トランプ|Trump|米大統領|President of the United States/i, name: "トランプ大統領", region: "us" },
+    { match: /ベッセント|Bessent|米財務長官|Treasury Secretary/i, name: "ベッセント財務長官", region: "us" },
+    { match: /ウォーシュ|Warsh|FRB議長|Fed Chair/i, name: "ウォーシュ FRB議長", region: "fed" },
+    { match: /パウエル|Powell/i, name: "パウエル氏（FRB）", region: "fed" },
+    { match: /ジェファーソン|Jefferson/i, name: "ジェファーソン FRB副議長", region: "fed" },
+    { match: /ボウマン|Bowman/i, name: "ボウマン FRB副議長", region: "fed" },
+    { match: /ウォラー|Waller/i, name: "ウォラー FRB理事", region: "fed" },
+    { match: /クック理事|Lisa Cook|Lisa D\. Cook/i, name: "クック FRB理事", region: "fed" },
+    { match: /ミラン|Miran/i, name: "ミラン FRB理事", region: "fed" },
+    { match: /バー理事|Michael S?\.? ?Barr/i, name: "バー FRB理事", region: "fed" },
+    { match: /ウィリアムズ|John C?\.? ?Williams/i, name: "ウィリアムズ NY連銀総裁", region: "fed" },
+    { match: /連銀総裁|FRB理事|Fed (President|Governor)|Federal Reserve Bank of/i, name: "FRB理事・地区連銀総裁", region: "fed" },
+    // 日本
+    { match: /高市|Takaichi|(?<![豪米英])首相|総理|Japan(ese)? Prime Minister/i, name: "日本の首相", region: "japan" },
+    { match: /片山|Katayama|財務大臣|(?<![豪米英])財務相|Japan(ese)? Finance Minister/i, name: "財務大臣", region: "japan" },
+    { match: /三村|Mimura|財務官|Vice[- ]Minister of Finance for International Affairs|top currency diplomat/i, name: "財務官", region: "japan" },
+    { match: /官房長官|Chief Cabinet Secretary/i, name: "官房長官", region: "japan" },
+    { match: /植田|Ueda|日銀総裁|BOJ Governor|Bank of Japan Governor/i, name: "植田 日銀総裁", region: "japan" },
+    { match: /日銀副総裁|氷見野|Himino|内田副総裁|Uchida/i, name: "日銀副総裁", region: "japan" },
+    { match: /日銀審議委員|BOJ board member/i, name: "日銀審議委員", region: "japan" }
   ];
   const person = profiles.find(profile => profile.match.test(text));
-  if (person) return speech || ["FRB要人発言", "日本銀行", "財務省"].includes(source) ? person : null;
-  if (source === "FRB要人発言" && speech) return { name: "FRB理事・地区連銀総裁", region: "fed" };
+  if (person) return speech || curated ? person : null;
+  if (source === "FRB要人発言") return { name: "FRB理事・地区連銀総裁", region: "fed" };
+  if (source === "RBA要人発言") return { name: "RBA要人", region: "au" };
   if (source === "日本銀行" && speech) return { name: "日銀要人", region: "japan" };
   if (source === "財務省" && speech) return { name: "財務省要人", region: "japan" };
   return null;
@@ -604,13 +644,29 @@ function renderSpeakerTracker() {
     matches.forEach(({ item, speaker }) => feed.append(renderNewsRow(item, { speaker })));
   }
   $("#speaker-status").textContent = `${matches.length}件・${newsUpdatedAt || "取得中"}更新`;
-  $("#sub-speak").textContent = all.length ? `${all.length}件の発言` : "FRB・日銀・財務省";
+  $("#sub-speak").textContent = all.length ? `${all.length}件の発言` : "日米豪の要人";
 }
 
 /* =========================================================
-   経済指標
+   経済指標（日本・米国・豪州）
+   GitHub Actions が TradingView の経済指標カレンダーを1〜4分ごとに取得し、
+   data ブランチの calendar.json に置く。サイトはそれを読み込む。
    ========================================================= */
 let calendarEvents = [];
+let calendarUpdatedAt = null;
+let calendarFromFallback = false;
+const CAL_URLS = [
+  { url: "https://api.github.com/repos/l1nus2910/fx-news-terminal/contents/calendar.json?ref=data", headers: { Accept: "application/vnd.github.raw+json" } },
+  { url: "https://raw.githubusercontent.com/l1nus2910/fx-news-terminal/data/calendar.json", headers: {} }
+];
+const COUNTRY = {
+  US: { key: "us", name: "米国", pairs: "ドル円・豪ドル/米ドル" },
+  JP: { key: "japan", name: "日本", pairs: "ドル円・豪ドル円" },
+  AU: { key: "au", name: "豪州", pairs: "豪ドル円・豪ドル/米ドル" }
+};
+const LEVEL_TEXT = { 3: "重要度 高", 2: "重要度 中", 1: "重要度 低" };
+const SURPRISE_TEXT = { up: "予想より上振れ", down: "予想より下振れ", inline: "予想通り" };
+
 const calendarRegionFilter = $("#calendar-region-filter");
 const calendarImportanceFilter = $("#calendar-importance-filter");
 calendarRegionFilter.addEventListener("change", renderCalendarEvents);
@@ -619,93 +675,97 @@ segmented($("#calendar-scope"), renderCalendarEvents);
 segmented($("#calendar-view"), value => { save("fx-cal-view", value); renderCalendarEvents(); });
 setSeg($("#calendar-view"), store("fx-cal-view", "list"));
 
-function localDateString(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+function cflag(country) {
+  return el("span", { class: `cflag ${String(country).toLowerCase()}`, title: COUNTRY[country]?.name || country, "aria-label": COUNTRY[country]?.name || country });
 }
-function displayValue(value) {
-  if (value === null || value === undefined || value === "") return "—";
-  const numbers = String(value).match(/[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:%|bps?|[KMB])?/gi);
-  return numbers?.length ? numbers.map(n => n.replace(/\s+/g, "")).join(" / ") : "—";
-}
-function eventRegion(event) {
-  const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code].filter(Boolean).join(" ").toLowerCase();
-  const title = [event.title, event.name, event.event].filter(Boolean).join(" ").toLowerCase();
-  if (/\b(us|usa|united states|u\.s\.|usd)\b|米国|アメリカ|\bfed\b|\bfomc\b|federal reserve/.test(region + " " + title)) return "us";
-  if (/\b(japan|jpn|jpy|boj)\b|日本|日銀|日本銀行|bank of japan/.test(region + " " + title)) return "japan";
-  return "other";
-}
-function japaneseEventName(event) {
-  const original = event.title || event.name || event.event || "イベント";
-  const region = eventRegion(event);
-  const cpiPrefix = region === "japan" ? "日本" : "米";
-  const rules = [
-    [/tokyo.*consumer price|tokyo.*\bcpi\b|東京都区部|東京.*CPI/i, "東京都区部消費者物価指数（東京CPI）"],
-    [/core consumer price index|core cpi|コアCPI/i, `${cpiPrefix}コア消費者物価指数（コアCPI）`],
-    [/consumer price index|\bcpi\b|消費者物価指数/i, `${cpiPrefix}消費者物価指数（CPI）`],
-    [/non[- ]?farm payroll|employment situation|us jobs report/i, "米雇用統計（非農業部門雇用者数）"],
-    [/unemployment rate/i, "米失業率"],
-    [/average hourly earnings/i, "米平均時給"],
-    [/producer price index|\bppi\b/i, "米生産者物価指数（PPI）"],
-    [/personal consumption expenditures|\bpce\b/i, "米個人消費支出（PCE）物価指数"],
-    [/fomc.*minutes|minutes.*fomc/i, "FOMC議事要旨"],
-    [/fomc|federal funds rate|fed.*rate decision/i, "FOMC政策金利発表"],
-    [/initial jobless claims|jobless claims/i, "米新規失業保険申請件数"],
-    [/retail sales/i, "米小売売上高"],
-    [/gross domestic product|\bgdp\b/i, "米国内総生産（GDP）"],
-    [/bank of japan|\bboj\b.*(rate|policy)|(rate|policy).*\bboj\b/i, "日銀金融政策"],
-    [/interest rate decision|central bank.*rate decision/i, "政策金利発表"]
-  ];
-  const match = rules.find(([pattern]) => pattern.test(original));
-  return match ? match[1] : original;
-}
-function isFxRelevantEvent(event) {
-  const title = [event.title, event.name, event.event].filter(Boolean).join(" ");
-  const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code].filter(Boolean).join(" ").toLowerCase();
-  if (/holiday|market open|market closed|stock market|exchange hours|trading hours|bank holiday/i.test(title)) return false;
-  const targetRegion = /\b(us|usa|united states|u\.s\.|usd|japan|jpy|jpn)\b|日本|米国|アメリカ/.test(region);
-  const otherRegion = /\b(canada|cad|australia|aud|eurozone|europe|eur|china|cny|uk|gbp|india|inr|switzerland|chf)\b|カナダ|豪州|オーストラリア|ユーロ圏|中国|英国|インド/.test(region);
-  if (targetRegion) return true;
-  if (otherRegion) return false;
-  if (/\b(us|usa|united states|u\.s\.|usd|japan|jpy|boj|fomc|fed|federal reserve)\b|日本|米国|アメリカ|日銀|米雇用統計/.test(title)) return true;
-  if (/core cpi|consumer price|inflation|\bcpi\b|\bpce\b|personal consumption|producer price|\bppi\b|non[- ]?farm|payroll|employment|jobless claims|unemployment|average hourly|\bgdp\b|gross domestic|\bism\b|\bpmi\b|retail sales|interest rate|rate decision|consumer confidence|durable goods|housing starts|industrial production|trade balance/i.test(title)) return true;
-  return false;
-}
-function eventImportanceScore(event) {
-  const value = String(event.impact ?? event.importance ?? "").toLowerCase();
-  const sourceScore = value === "high" || value === "3" ? 3 : value === "medium" || value === "med" || value === "2" ? 2 : value === "low" || value === "1" ? 1 : 0;
-  const title = [event.title, event.name, event.event].filter(Boolean).join(" ").toLowerCase();
-  const region = eventRegion(event);
-  const topTier = /consumer price index|\bcpi\b|personal consumption expenditures|\bpce\b|non[- ]?farm payroll|\bnfp\b|employment situation|federal funds rate|fed.*rate decision|fomc.*(rate|statement|decision|press conference)|interest rate decision|policy rate decision|bank of japan.*(rate|policy|meeting)|\bboj\b.*(rate|policy|meeting)|(rate|policy|meeting).*\bboj\b|東京都区部|全国.*消費者物価|日本.*コアcpi/;
-  const secondTier = /inflation|producer price index|\bppi\b|gross domestic product|\bgdp\b|retail sales|jobless claims|unemployment|employment|average hourly earnings|wage|\bjolts\b|\badp\b|\bism\b|\bpmi\b|tankan|industrial production|consumer confidence|fomc minutes|meeting minutes|summary of opinions|central bank.*speech|governor.*speech|testimony|intervention/;
-  if ((region === "us" || region === "japan") && topTier.test(title)) return 3;
-  if ((region === "us" || region === "japan") && secondTier.test(title)) return Math.max(sourceScore, 2);
-  return sourceScore;
-}
-const LEVEL_TEXT = { 3: "重要度 高", 2: "重要度 中", 1: "重要度 低", 0: "重要度 —" };
-function eventDate(event) {
-  const raw = event.time_utc || event.datetime || event.date;
-  if (!raw) return null;
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-function eventValues(event) {
+function eventRegion(event) { return COUNTRY[event.country]?.key || "other"; }
+function val(value) { return value === null || value === undefined || value === "" ? "—" : String(value); }
+function eventLink(event) { return safeUrl(event.source_url) || ""; }
+
+function normalizeEvent(raw) {
+  const date = raw.date ? new Date(raw.date) : null;
   return {
-    prior: event.prior ?? event.previous ?? event.previous_value,
-    consensus: event.consensus ?? event.forecast ?? event.estimate,
-    actual: event.actual ?? event.actual_value
+    id: String(raw.id),
+    country: raw.country,
+    title: raw.title,
+    title_ja: raw.title_ja || raw.title,
+    date: date && !Number.isNaN(date.getTime()) ? date : null,
+    actual: raw.actual ?? null,
+    forecast: raw.forecast ?? null,
+    previous: raw.previous ?? null,
+    surprise: raw.surprise ?? null,
+    level: Number(raw.level) || 1,
+    source_url: raw.source_url || null,
+    source: raw.source || null
   };
 }
-function safeFinanceCalendarUrl(value) {
-  if (typeof value !== "string") return "";
-  try {
-    const url = new URL(value);
-    return ["financecalendar.com", "www.financecalendar.com"].includes(url.hostname) && url.protocol === "https:" ? url.href : "";
-  } catch { return ""; }
+
+/* 予備：data ブランチがまだ無いときは FinanceCalendar（結果なし）を使う */
+async function loadFinanceCalendarFallback() {
+  const start = new Date();
+  const end = new Date(start.getTime() + 14 * 86400e3);
+  const d = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  const response = await fetch(`https://www.financecalendar.com/wp-json/fc/v1/calendar?from=${d(start)}&to=${d(end)}&limit=500`);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  const list = Array.isArray(payload) ? payload : (payload.events || []);
+  return list.filter(e => ["US", "JP", "AU"].includes(String(e.country).toUpperCase())).map(e => normalizeEvent({
+    id: e.id, country: String(e.country).toUpperCase(), title: e.title || e.name,
+    title_ja: `${COUNTRY[String(e.country).toUpperCase()].name.replace("米国", "米").replace("豪州", "豪")} ${e.name || e.title}`,
+    date: e.time_utc || e.release_at_utc || e.date, actual: e.actual, forecast: e.consensus, previous: e.prior,
+    level: e.impact === "high" ? 3 : e.impact === "medium" ? 2 : 1, source_url: e.url
+  }));
 }
-function kissFxDailyUrl(date) {
-  if (!date) return "";
-  const ymd = dayKey(date).replaceAll("-", "");
-  return /^\d{8}$/.test(ymd) ? `https://kissfx.com/article/fxdays${ymd}.html` : "";
+
+async function loadCalendar() {
+  let loaded = false;
+  for (const source of CAL_URLS) {
+    try {
+      const response = await fetch(source.url, { headers: source.headers, cache: "no-store" });
+      if (!response.ok) continue;
+      const data = await response.json();
+      if (!Array.isArray(data.events)) continue;
+      const updated = new Date(data.updated_at);
+      if (Number.isNaN(updated.getTime()) || Date.now() - updated.getTime() > 2 * 86400e3) continue;
+      calendarEvents = data.events.map(normalizeEvent).sort((a, b) => (a.date || 0) - (b.date || 0));
+      calendarUpdatedAt = updated;
+      calendarFromFallback = false;
+      loaded = true;
+      break;
+    } catch { /* 次の取得元へ */ }
+  }
+  if (!loaded) {
+    try {
+      calendarEvents = (await loadFinanceCalendarFallback()).sort((a, b) => (a.date || 0) - (b.date || 0));
+      calendarUpdatedAt = new Date();
+      calendarFromFallback = true;
+      loaded = true;
+    } catch { /* 何も取れない */ }
+  }
+  if (!loaded) {
+    $("#calendar-status").textContent = "取得できません";
+    if (!calendarEvents.length) {
+      $("#calendar-feed").replaceChildren(el("div", { class: "list-card" }, el("div", { class: "empty" }, el("strong", { text: "経済指標を読み込めませんでした" }), "時間をおいて、右上の状態ボタンから再読み込みしてください。")));
+      $("#next-event").replaceChildren(el("div", { class: "empty", text: "指標を読み込めませんでした" }));
+    }
+  } else {
+    $("#calendar-status").textContent = `${calendarEvents.length}件・${fmtTime.format(calendarUpdatedAt)}時点${calendarFromFallback ? "（予備の取得元・結果なし）" : ""}`;
+    renderCalendarEvents();
+    renderNextEvent();
+    mergeNews();
+    renderAlerts();
+    notifyEvents();
+  }
+  scheduleCalendar();
+}
+
+/* 重要指標の前後は短い間隔で読み直す */
+let calendarTimer;
+function scheduleCalendar() {
+  clearTimeout(calendarTimer);
+  const now = Date.now();
+  const hot = calendarEvents.some(e => e.level >= 2 && e.date && !e.actual && e.date.getTime() - now < 30 * 60e3 && now - e.date.getTime() < 25 * 60e3);
+  calendarTimer = setTimeout(loadCalendar, hot ? 75e3 : 5 * 60e3);
 }
 
 function visibleCalendarEvents() {
@@ -714,50 +774,46 @@ function visibleCalendarEvents() {
   const scope = segValue($("#calendar-scope"));
   const todayKey = dayKey(new Date());
   const weekEnd = Date.now() + 7 * 86400e3;
+  const since = Date.now() - 36 * 3600e3;
   return calendarEvents.filter(event => {
     if (region !== "all" && eventRegion(event) !== region) return false;
-    if (eventImportanceScore(event) < min) return false;
-    const d = eventDate(event);
-    if (scope === "today" && (!d || dayKey(d) !== todayKey)) return false;
+    if (event.level < min) return false;
+    const d = event.date;
+    if (scope === "today") return d && dayKey(d) === todayKey;
+    if (d && d.getTime() < since) return false;
     if (scope === "week" && (!d || d.getTime() > weekEnd)) return false;
     return true;
   });
 }
 
 function renderEventRow(event) {
-  const d = eventDate(event);
-  const lv = eventImportanceScore(event);
-  const name = japaneseEventName(event);
-  const url = safeFinanceCalendarUrl(event.url);
-  const v = eventValues(event);
-  const region = eventRegion(event);
-  const hasActual = displayValue(v.actual) !== "—";
-
-  const links = el("div", { class: "ev-links" });
-  const kiss = kissFxDailyUrl(d);
-  if (kiss) links.append(el("a", { href: kiss, target: "_blank", rel: "noopener noreferrer", text: "同日の指標ランク（羊飼いのFXブログ）" }));
-  links.append(el("a", { href: "https://www.oanda.jp/lab-education/calendar/", target: "_blank", rel: "noopener noreferrer", text: "修正値・結果（OANDA）" }));
-
-  return el("article", { class: `ev lv-${lv}` },
-    el("div", { class: "ev-time" }, d && !event.all_day ? fmtTime.format(d) : "終日", el("small", { text: region === "us" ? "米国" : region === "japan" ? "日本" : "" })),
+  const d = event.date;
+  const hasActual = event.actual !== null && event.actual !== "";
+  const url = eventLink(event);
+  const now = Date.now();
+  const soon = !hasActual && d && d.getTime() > now && d.getTime() - now < 60 * 60e3;
+  const waiting = !hasActual && d && d.getTime() <= now && now - d.getTime() < 60 * 60e3;
+  return el("article", { class: `ev lv-${event.level}${hasActual ? " done" : ""}${soon ? " soon" : ""}`, id: `ev-${event.id}` },
+    el("div", { class: "ev-time" }, d ? fmtTime.format(d) : "—", el("small", {}, cflag(event.country), COUNTRY[event.country]?.name || "")),
     el("div", {},
-      el("h3", { class: "ev-name" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: name }) : name),
+      el("h3", { class: "ev-name" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: event.title_ja }) : event.title_ja),
       el("div", { class: "ev-meta" },
-        el("span", { class: `lv lv-${lv}`, text: LEVEL_TEXT[lv] }),
-        hasActual ? el("span", { class: "chip up", text: "発表済み" }) : null)),
+        el("span", { class: `lv lv-${event.level}`, text: LEVEL_TEXT[event.level] }),
+        hasActual && event.surprise ? el("span", { class: `chip ${event.surprise === "up" ? "up" : event.surprise === "down" ? "down" : ""}`, text: `${event.surprise === "up" ? "▲ " : event.surprise === "down" ? "▼ " : ""}${SURPRISE_TEXT[event.surprise]}` }) : null,
+        hasActual && !event.surprise ? el("span", { class: "chip up", text: "発表済み" }) : null,
+        soon ? el("span", { class: "chip soon", text: `あと${Math.max(1, Math.round((d.getTime() - now) / 60e3))}分` }) : null,
+        waiting ? el("span", { class: "chip soon", text: "結果を待っています" }) : null)),
     el("div", { class: "vals" },
-      el("div", { class: "val" }, el("small", { text: "前回" }), el("strong", { text: displayValue(v.prior) })),
-      el("div", { class: "val" }, el("small", { text: "市場予想" }), el("strong", { text: displayValue(v.consensus) })),
-      el("div", { class: `val${hasActual ? " actual" : ""}` }, el("small", { text: "結果" }), el("strong", { text: displayValue(v.actual) }))),
-    links);
+      el("div", { class: "val" }, el("small", { text: "前回" }), el("strong", { text: val(event.previous) })),
+      el("div", { class: "val" }, el("small", { text: "予想" }), el("strong", { text: val(event.forecast) })),
+      el("div", { class: `val${hasActual ? ` actual ${event.surprise || ""}` : ""}` }, el("small", { text: "結果" }), el("strong", { text: val(event.actual) }))));
 }
 
 function groupByDay(events) {
   const groups = new Map();
   events.forEach(event => {
-    const d = eventDate(event);
-    const key = d ? dayKey(d) : "未定";
-    if (!groups.has(key)) groups.set(key, { date: d, events: [] });
+    const key = event.date ? dayKey(event.date) : "未定";
+    if (!groups.has(key)) groups.set(key, { date: event.date, events: [] });
     groups.get(key).events.push(event);
   });
   return groups;
@@ -771,8 +827,8 @@ function renderCalendarEvents() {
   if (!events.length) {
     const scope = segValue($("#calendar-scope"));
     host.append(el("div", { class: "list-card" }, el("div", { class: "empty" },
-      el("strong", { text: calendarEvents.length ? "条件に合うイベントはありません" : "イベントを読み込んでいます" }),
-      calendarEvents.length ? (scope === "today" ? "今日はドル円関連の指標がありません。期間を「14日間」にすると先の予定が見られます。" : "地域や重要度の絞り込みを広げてください。") : "")));
+      el("strong", { text: calendarEvents.length ? "条件に合う指標はありません" : "経済指標を読み込んでいます" }),
+      calendarEvents.length ? (scope === "today" ? "今日は対象の指標がありません。期間を「14日間」にすると先の予定が見られます。" : "地域や重要度の絞り込みを広げてください。") : "")));
     return;
   }
   const todayKey = dayKey(new Date());
@@ -784,12 +840,10 @@ function renderCalendarEvents() {
       const col = el("section", { class: `board-col${key === todayKey ? " today" : ""}` },
         el("h3", {}, el("span", {}, el("span", { class: "num", text: date ? fmtMD.format(date) : "未定" }), " ", date ? fmtWeek.format(date) : ""), el("small", { text: `${list.length}件` })));
       list.forEach(event => {
-        const d = eventDate(event);
-        const lv = eventImportanceScore(event);
-        const url = safeFinanceCalendarUrl(event.url) || "#/calendar";
-        col.append(el("a", { class: `bcard lv-${lv}`, href: url, target: url.startsWith("http") ? "_blank" : null, rel: "noopener noreferrer" },
-          el("time", { text: d && !event.all_day ? fmtTime.format(d) : "終日" }),
-          el("b", { text: japaneseEventName(event) })));
+        col.append(el("a", { class: `bcard lv-${event.level}`, href: "#/calendar", onclick: e => { e.preventDefault(); setSeg($("#calendar-view"), "list"); renderCalendarEvents(); document.getElementById(`ev-${event.id}`)?.scrollIntoView({ block: "center" }); } },
+          el("time", {}, cflag(event.country), event.date ? fmtTime.format(event.date) : "—"),
+          el("b", { text: event.title_ja }),
+          event.actual ? el("span", { class: `bres ${event.surprise || ""}`, text: `結果 ${event.actual}（予想 ${val(event.forecast)}）` }) : null));
       });
       board.append(col);
     });
@@ -813,30 +867,24 @@ let nextEventTimer;
 function renderNextEvent() {
   const host = $("#next-event");
   const now = Date.now();
-  const upcoming = calendarEvents
-    .filter(e => { const d = eventDate(e); return d && d.getTime() > now - 30 * 60e3; })
-    .sort((a, b) => eventDate(a) - eventDate(b));
-  const pick = upcoming.find(e => eventImportanceScore(e) >= 3) || upcoming.find(e => eventImportanceScore(e) >= 2) || upcoming[0];
+  const upcoming = calendarEvents.filter(e => e.date && e.date.getTime() > now - 20 * 60e3 && !(e.actual && e.date.getTime() < now - 20 * 60e3));
+  const pick = upcoming.find(e => e.level >= 3 && !e.actual) || upcoming.find(e => e.level >= 3) || upcoming.find(e => e.level >= 2) || upcoming[0];
   clearInterval(nextEventTimer);
-  const todayCount = calendarEvents.filter(e => { const d = eventDate(e); return d && dayKey(d) === dayKey(new Date()); }).length;
-  $("#sub-cal").textContent = todayCount ? `今日 ${todayCount}件` : "米国・日本";
+  const todayCount = calendarEvents.filter(e => e.date && dayKey(e.date) === dayKey(new Date()) && e.level >= 2).length;
+  $("#sub-cal").textContent = todayCount ? `今日 ${todayCount}件` : "日米豪";
 
   if (!pick) {
-    host.replaceChildren(el("div", { class: "empty" }, el("strong", { text: "予定されている重要指標はありません" }), "14日以内の米国・日本の指標が見つかると表示されます。"));
+    host.replaceChildren(el("div", { class: "empty" }, el("strong", { text: "予定されている重要指標はありません" }), "日本・米国・豪州の指標が見つかると表示されます。"));
     return;
   }
-  const d = eventDate(pick);
-  const v = eventValues(pick);
-  const lv = eventImportanceScore(pick);
-  const released = displayValue(v.actual) !== "—";
-  const hasForecast = displayValue(v.consensus) !== "—";
-  const stage = released ? 3 : d.getTime() <= now ? 2 : hasForecast ? 2 : 1;
-
+  const d = pick.date;
+  const released = Boolean(pick.actual);
+  const stage = released ? 3 : 2;
   const countdown = el("span", { class: "countdown" });
   const tick = () => {
     const diff = d.getTime() - Date.now();
     if (released) { countdown.replaceChildren("発表済み"); return; }
-    if (diff <= 0) { countdown.replaceChildren("発表時刻です"); return; }
+    if (diff <= 0) { countdown.replaceChildren("結果待ち"); return; }
     const days = Math.floor(diff / 86400e3);
     const hours = Math.floor(diff % 86400e3 / 3600e3);
     const mins = Math.floor(diff % 3600e3 / 60e3);
@@ -848,52 +896,115 @@ function renderNextEvent() {
   tick();
   nextEventTimer = setInterval(tick, 30e3);
 
-  const url = safeFinanceCalendarUrl(pick.url);
+  const url = eventLink(pick);
   const step = (n, label, value) => el("div", { class: `step${stage > n ? " done" : stage === n ? " now" : ""}` },
-    el("div", { class: "step-dot", text: n }), el("small", { text: label }), el("strong", { text: displayValue(value) }));
-
-  const stepper = el("div", { class: "stepper", style: `--progress:${stage >= 3 ? 100 : stage === 2 ? 50 : 0}%` },
-    step(1, "前回", v.prior), step(2, "市場予想", v.consensus), step(3, "結果", v.actual));
+    el("div", { class: "step-dot", text: n }), el("small", { text: label }), el("strong", { text: val(value) }));
 
   host.replaceChildren(
     el("div", { class: "ne-top" },
-      el("span", { class: `lv lv-${lv}`, text: LEVEL_TEXT[lv] }),
-      el("span", { class: "chip", text: eventRegion(pick) === "japan" ? "日本" : "米国" }),
+      el("span", { class: `lv lv-${pick.level}`, text: LEVEL_TEXT[pick.level] }),
+      el("span", { class: "chip" }, cflag(pick.country), COUNTRY[pick.country]?.name || ""),
       countdown),
-    el("h3", { class: "ne-name" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: japaneseEventName(pick) }) : japaneseEventName(pick)),
-    el("div", { class: "ne-when", text: `${fmtMD.format(d)}（${fmtWeek.format(d)}）${pick.all_day ? "終日" : fmtTime.format(d) + " 発表"}` }),
-    stepper,
+    el("h3", { class: "ne-name" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: pick.title_ja }) : pick.title_ja),
+    el("div", { class: "ne-when", text: `${fmtMD.format(d)}（${fmtWeek.format(d)}）${fmtTime.format(d)} 発表・${COUNTRY[pick.country]?.pairs || ""}に影響` }),
+    el("div", { class: "stepper", style: `--progress:${released ? 100 : 50}%` },
+      step(1, "前回", pick.previous), step(2, "予想", pick.forecast), step(3, "結果", pick.actual)),
+    released && pick.surprise ? el("p", { class: `ne-surprise ${pick.surprise}`, text: `${pick.surprise === "up" ? "▲" : pick.surprise === "down" ? "▼" : "＝"} ${SURPRISE_TEXT[pick.surprise]}` }) : null,
     el("div", { class: "ne-links" },
       el("a", { class: "ghost-btn", href: "#/calendar?scope=today" }, icon("i-cal"), "今日の指標"),
-      el("a", { class: "ghost-btn", href: "#/chart" }, icon("t-chart"), "チャートを見る")));
+      el("a", { class: "ghost-btn", href: `#/chart?symbol=${pick.country === "AU" ? "FX:AUDJPY" : "FX:USDJPY"}` }, icon("t-chart"), "チャートを見る")));
 }
 
-async function loadCalendar() {
-  const start = new Date();
-  const end = new Date(start);
-  end.setDate(end.getDate() + 14);
-  const endpoint = new URL("https://www.financecalendar.com/wp-json/fc/v1/calendar");
-  endpoint.search = new URLSearchParams({ from: localDateString(start), to: localDateString(end), limit: "500" });
-  try {
-    const response = await fetch(endpoint);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
-    const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
-    calendarEvents = (Array.isArray(events) ? events : [])
-      .filter(event => isFxRelevantEvent(event) && ["us", "japan"].includes(eventRegion(event)))
-      .sort((a, b) => (eventDate(a) || 0) - (eventDate(b) || 0));
-    $("#calendar-status").textContent = `${calendarEvents.length}件・${fmtTime.format(new Date())}更新`;
-  } catch {
-    $("#calendar-status").textContent = "取得できません";
-    if (!calendarEvents.length) {
-      $("#calendar-feed").replaceChildren(el("div", { class: "list-card" }, el("div", { class: "empty" }, el("strong", { text: "経済イベントを読み込めませんでした" }), "時間をおいて、右上の状態ボタンから再読み込みしてください。")));
-      $("#next-event").replaceChildren(el("div", { class: "empty", text: "指標を読み込めませんでした" }));
-    }
-    return;
-  }
-  renderCalendarEvents();
-  renderNextEvent();
+/* 重要指標をニュースの流れに入れる（予定・結果） */
+function eventNewsItems() {
+  const now = Date.now();
+  return calendarEvents.filter(e => e.date && e.level >= 2 && (
+    (e.actual && now - e.date.getTime() < 3 * 86400e3 && e.date.getTime() <= now + 60e3) ||
+    (!e.actual && e.level >= 3 && e.date.getTime() > now - 60 * 60e3 && e.date.getTime() - now < 24 * 3600e3)
+  )).map(e => {
+    const released = Boolean(e.actual);
+    return {
+      isEvent: true,
+      event: e,
+      source: "経済指標",
+      title: released ? `${e.title_ja} 結果 ${e.actual}` : `${e.title_ja} ${fmtTime.format(e.date)} 発表予定`,
+      summary: `予想 ${val(e.forecast)} ／ 前回 ${val(e.previous)}${released ? "" : `・${COUNTRY[e.country]?.pairs || ""}に影響`}`,
+      url: eventLink(e) || "",
+      published_at: e.date.toISOString(),
+      importance: e.level >= 3 ? 5 : 4,
+      usd_jpy_impact: released ? (e.surprise ? SURPRISE_TEXT[e.surprise] : "発表済み") : "発表前",
+      category: released ? "指標結果" : "指標予定"
+    };
+  });
 }
+
+/* 速報バナー（重要度「高」の指標の直前・直後に上部へ表示） */
+let dismissedAlerts = new Set(store("fx-dismissed-alerts", []));
+function renderAlerts() {
+  const bar = $("#alert-bar");
+  const now = Date.now();
+  const items = [];
+  const results = calendarEvents
+    .filter(e => e.level >= 3 && e.actual && e.date && now - e.date.getTime() < 90 * 60e3 && e.date.getTime() <= now + 60e3 && !dismissedAlerts.has(`res:${e.id}`))
+    .sort((a, b) => b.date - a.date).slice(0, 2);
+  results.forEach(e => items.push({ key: `res:${e.id}`, kind: `res ${e.surprise || ""}`, label: "結果", e,
+    text: `${e.actual}（予想 ${val(e.forecast)}）${e.surprise === "up" ? " ▲上振れ" : e.surprise === "down" ? " ▼下振れ" : e.surprise === "inline" ? " 予想通り" : ""}` }));
+  const waiting = calendarEvents.find(e => e.level >= 3 && !e.actual && e.date && e.date.getTime() <= now && now - e.date.getTime() < 20 * 60e3);
+  if (waiting) items.push({ key: `wait:${waiting.id}`, kind: "wait", label: "発表時刻", e: waiting, text: `結果待ち（予想 ${val(waiting.forecast)}）` });
+  const soon = calendarEvents.filter(e => e.level >= 3 && !e.actual && e.date && e.date.getTime() > now && e.date.getTime() - now <= 60 * 60e3).slice(0, 2);
+  soon.forEach(e => items.push({ key: `pre:${e.id}`, kind: "pre", label: `あと${Math.max(1, Math.ceil((e.date.getTime() - now) / 60e3))}分`, e,
+    text: `${fmtTime.format(e.date)}発表 予想 ${val(e.forecast)}` }));
+
+  bar.hidden = !items.length;
+  bar.replaceChildren(...items.slice(0, 3).map(item => el("div", { class: `alert ${item.kind}` },
+    el("a", { class: "alert-main", href: "#/calendar?scope=today" },
+      el("span", { class: "alert-label", text: item.label }),
+      cflag(item.e.country),
+      el("strong", { text: item.e.title_ja }),
+      el("span", { class: "alert-text", text: item.text })),
+    item.kind.startsWith("res") ? el("button", { class: "alert-close", type: "button", "aria-label": "このお知らせを閉じる", onclick: () => {
+      dismissedAlerts.add(item.key);
+      save("fx-dismissed-alerts", [...dismissedAlerts].slice(-50));
+      renderAlerts();
+    } }, icon("i-close")) : null)));
+}
+setInterval(() => { if (calendarEvents.length) { renderAlerts(); notifyEvents(); } }, 20e3);
+
+/* 端末の通知（アプリを開いている間） */
+const notifySetting = { get on() { return store("fx-notify", false) && "Notification" in window && Notification.permission === "granted"; } };
+let notified = new Set(store("fx-notified", []));
+function notifyEvents() {
+  if (!notifySetting.on) return;
+  const now = Date.now();
+  calendarEvents.forEach(e => {
+    if (e.level < 3 || !e.date) return;
+    const minutes = (e.date.getTime() - now) / 60e3;
+    const pre = `pre:${e.id}`, res = `res:${e.id}`;
+    if (!e.actual && minutes > 0 && minutes <= 5 && !notified.has(pre)) {
+      new Notification(`まもなく発表：${e.title_ja}`, { body: `${fmtTime.format(e.date)} 発表・予想 ${val(e.forecast)}／前回 ${val(e.previous)}`, tag: pre, icon: "icons/icon-192.png" });
+      notified.add(pre);
+    }
+    if (e.actual && minutes <= 0 && minutes > -90 && !notified.has(res)) {
+      new Notification(`結果：${e.title_ja} ${e.actual}`, { body: `予想 ${val(e.forecast)}／前回 ${val(e.previous)}${e.surprise ? "・" + SURPRISE_TEXT[e.surprise] : ""}`, tag: res, icon: "icons/icon-192.png" });
+      notified.add(res);
+    }
+  });
+  save("fx-notified", [...notified].slice(-100));
+}
+function renderNotifySetting() {
+  const button = $("#notify-btn");
+  if (!button) return;
+  if (!("Notification" in window)) { button.disabled = true; button.textContent = "この端末は未対応"; return; }
+  button.textContent = notifySetting.on ? "オフにする" : "オンにする";
+}
+$("#notify-btn")?.addEventListener("click", async () => {
+  if (notifySetting.on) { save("fx-notify", false); renderNotifySetting(); toast("通知をオフにしました"); return; }
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") { save("fx-notify", true); toast("重要指標の通知をオンにしました"); notifyEvents(); }
+  else toast("通知が許可されませんでした。ブラウザの設定から許可してください");
+  renderNotifySetting();
+});
+renderNotifySetting();
 
 /* =========================================================
    X投稿（公式リストの埋め込み）
@@ -933,8 +1044,8 @@ function runGlobalSearch() {
 
   const speakerHits = speakerRows().filter(({ item, speaker }) => [speaker.name, newsTitle(item), item.summary || ""].join(" ").toLocaleLowerCase("ja-JP").includes(query)).slice(0, 4);
   const speakerUrls = new Set(speakerHits.map(r => r.item.url));
-  const newsHits = hits(newsItems, i => [newsTitle(i), i.summary || "", i.source || "", i.category || ""].join(" ")).filter(i => !speakerUrls.has(i.url)).slice(0, 6);
-  const eventHits = hits(calendarEvents, e => [japaneseEventName(e), e.title || ""].join(" ")).slice(0, 5);
+  const newsHits = hits(rawNews, i => [newsTitle(i), i.summary || "", i.source || "", i.category || ""].join(" ")).filter(i => !speakerUrls.has(i.url)).slice(0, 6);
+  const eventHits = hits(calendarEvents, e => [e.title_ja, e.title || ""].join(" ")).slice(0, 5);
 
   globalResults.replaceChildren();
   const group = (label, rows) => { if (rows.length) globalResults.append(el("div", { class: "result-group", text: label }), ...rows); };
@@ -942,8 +1053,8 @@ function runGlobalSearch() {
     highlight(newsTitle(item), query), el("small", { text: `${speaker.name}・${newsDate(item) ? relTime(newsDate(item)) : ""}` }))));
   group("ニュース", newsHits.map(item => el("a", { class: "result", href: safeUrl(item.url) || "#/news", target: safeUrl(item.url) ? "_blank" : null, rel: "noopener noreferrer" },
     highlight(newsTitle(item), query), el("small", { text: `${sourceLabel(item.source)}・${newsDate(item) ? relTime(newsDate(item)) : ""}` }))));
-  group("経済指標", eventHits.map(event => { const d = eventDate(event); return el("a", { class: "result", href: "#/calendar" },
-    highlight(japaneseEventName(event), query), el("small", { text: d ? `${fmtMD.format(d)}（${fmtWeek.format(d)}）${fmtTime.format(d)}` : "日時未定" })); }));
+  group("経済指標", eventHits.map(event => { const d = event.date; return el("a", { class: "result", href: "#/calendar" },
+    highlight(event.title_ja, query), el("small", { text: `${COUNTRY[event.country]?.name || ""}・${d ? `${fmtMD.format(d)}（${fmtWeek.format(d)}）${fmtTime.format(d)}` : "日時未定"}${event.actual ? `・結果 ${event.actual}` : ""}` })); }));
   if (!globalResults.childElementCount) {
     globalResults.append(el("div", { class: "empty" }, el("strong", { text: `「${globalSearch.value.trim()}」は見つかりませんでした` }), "別の言葉や、英語表記（Powell など）でも試してください。"));
   }
@@ -977,13 +1088,17 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
    ========================================================= */
 $("#connection-status").addEventListener("click", () => { loadNews(); loadCalendar(); toast("最新の情報を取得しています"); });
 
+// 上部バーの高さ（速報バナーで変わる）をレート欄の固定位置に反映
+if ("ResizeObserver" in window) {
+  new ResizeObserver(([entry]) => document.documentElement.style.setProperty("--topbar-h", `${Math.round(entry.target.getBoundingClientRect().height)}px`)).observe($(".topbar"));
+}
+
 theme.sync();
 widgets.ticker();
 route();
 loadNews();
 loadCalendar();
 setInterval(loadNews, 60_000);
-setInterval(loadCalendar, 5 * 60_000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") loadNews();
 });

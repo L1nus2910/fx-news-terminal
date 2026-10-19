@@ -122,7 +122,7 @@
 
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 140px; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 200px; }
 body {
   margin: 0;
   min-height: 100dvh;
@@ -201,42 +201,59 @@ svg { width: 1em; height: 1em; flex: none; }
 .status-chip.loading .dot { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .3; } }
 
-/* ---------- rate bar ---------- */
-.ratebar { position: sticky; top: calc(58px + env(safe-area-inset-top, 0px)); z-index: 25; padding: 0 16px 8px; }
+/* ---------- rate bar（USD/JPY・AUD/JPY・AUD/USD） ---------- */
+.ratebar { position: sticky; top: var(--topbar-h, 58px); z-index: 25; padding: 0 16px 8px; }
 .ratebar-inner {
   max-width: 1088px; margin: 0 auto;
-  display: flex; align-items: center; gap: 12px;
-  padding: 6px 8px 6px 14px; min-height: 64px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+}
+.rate-card {
+  position: relative; height: 108px; overflow: hidden;
   background: var(--blur-surface);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--line); border-radius: var(--r-lg);
   box-shadow: var(--shadow-card);
 }
-.pair { display: flex; align-items: center; gap: 10px; flex: none; }
-.pair-flags { position: relative; width: 38px; height: 26px; }
-.flag { position: absolute; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--surface); top: 1px; }
-.flag.us { left: 0; background:
-  linear-gradient(#3C3B6E, #3C3B6E) 0 0 / 50% 54% no-repeat,
-  repeating-linear-gradient(#B22234 0 2.6px, #fff 2.6px 5.2px); }
-.flag.jp { left: 14px; background: radial-gradient(circle, #BC002D 0 5px, #fff 5.4px); }
-.pair-name { display: flex; flex-direction: column; line-height: 1.15; }
-.pair-name strong { font: 700 15px var(--num); letter-spacing: .02em; }
-.pair-name small { font-size: 10.5px; color: var(--ink-3); }
-.ticker-host { flex: 1; min-width: 0; min-height: 52px; display: flex; align-items: center; overflow: hidden; }
-.ticker-host tv-single-ticker {
-  display: block; width: 100%;
-  --tv-color-platform-background: transparent;
-  --tv-color-pane-background: transparent;
-  --tv-color-widget-background: transparent;
-  --tv-color-text: var(--ink);
-  --tv-color-hairline: var(--line);
-  --tv-color-widget-element-background-hover: var(--surface-3);
+.rate-card tv-mini-chart { display: block; width: 100%; height: 100%; }
+.rate-link { position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
+.rate-link:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); text-decoration: none; }
+.rate-link:focus-visible { outline-offset: -2px; }
+
+/* 国旗（小） */
+.cflag { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-right: 4px; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.12); }
+.cflag.us { background: linear-gradient(#3C3B6E, #3C3B6E) 0 0 / 50% 54% no-repeat, repeating-linear-gradient(#B22234 0 1.6px, #fff 1.6px 3.2px); }
+.cflag.jp { background: radial-gradient(circle, #BC002D 0 3.2px, #fff 3.6px); }
+.cflag.au { background: radial-gradient(circle at 72% 68%, #fff 0 1.2px, transparent 1.5px), radial-gradient(circle at 30% 72%, #fff 0 1.4px, transparent 1.7px), linear-gradient(#C8102E, #C8102E) 22% 0 / 2px 50% no-repeat, linear-gradient(#C8102E, #C8102E) 0 22% / 50% 2px no-repeat, #012169; }
+
+/* ---------- 速報バナー（重要指標） ---------- */
+.alert-bar { max-width: 1120px; margin: 0 auto; padding: 0 16px 8px; display: grid; gap: 6px; }
+.alert {
+  display: flex; align-items: center; gap: 6px;
+  border-radius: var(--r-md); overflow: hidden;
+  background: var(--gold-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  box-shadow: var(--shadow-card);
 }
-.ratebar-link {
-  flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center;
-  color: var(--ink-3); font-size: 18px;
+.alert-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: inherit; }
+.alert-main:hover { text-decoration: none; }
+.alert-main strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.alert-main .cflag { margin: 0; }
+.alert-text { font-size: 13px; color: var(--ink-2); font-family: var(--num), var(--font); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto; }
+.rate-fallback { grid-column: 1 / -1; padding: 12px; }
+.alert-label {
+  flex: none; display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px;
+  background: var(--gold); color: #fff; font-size: 12px; font-weight: 700;
 }
-.ratebar-link:hover { background: var(--surface-3); color: var(--accent); text-decoration: none; }
+.alert-label::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1s ease-in-out infinite; }
+.alert.res { background: var(--accent-soft); border-color: var(--accent-line); }
+.alert.res .alert-label { background: var(--accent); color: var(--accent-ink); }
+.alert.res.up { background: var(--up-soft); border-color: color-mix(in srgb, var(--up) 40%, transparent); }
+.alert.res.up .alert-label { background: var(--up); color: #fff; }
+.alert.res.down { background: var(--down-soft); border-color: color-mix(in srgb, var(--down) 40%, transparent); }
+.alert.res.down .alert-label { background: var(--down); color: #fff; }
+.alert.res .alert-text { color: var(--ink); font-weight: 700; }
+.alert.wait .alert-label { background: var(--ink-2); }
+.alert-close { flex: none; width: 36px; height: 36px; margin-right: 4px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-3); display: grid; place-items: center; font-size: 16px; }
+.alert-close:hover { background: rgba(0,0,0,.06); color: var(--ink); }
 
 /* ---------- layout ---------- */
 .screens { max-width: 1120px; margin: 0 auto; padding: 8px 16px 0; }
@@ -264,7 +281,7 @@ svg { width: 1em; height: 1em; flex: none; }
 }
 @media (min-width: 960px) {
   .home-grid { grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr); align-items: start; }
-  .home-side { position: sticky; top: 152px; }
+  .home-side { position: sticky; top: 190px; }
 }
 
 /* ---------- search ---------- */
@@ -417,6 +434,13 @@ svg { width: 1em; height: 1em; flex: none; }
   align-items: start;
 }
 .row:first-child { border-top: 0; }
+.row.event { position: relative; background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface)); }
+.row.event::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+.row.event.lv-3::before { background: var(--down); }
+.row.event.upcoming { background: color-mix(in srgb, var(--gold-soft) 60%, var(--surface)); }
+.row.event.upcoming::before { background: var(--gold); }
+.row.event .row-title { font-family: var(--font); }
+.row-time .cflag { display: block; margin: 0 0 4px; width: 16px; height: 16px; }
 .row-time { font: 600 13px/1.35 var(--num); color: var(--ink-3); padding-top: 2px; font-variant-numeric: tabular-nums; }
 .row-time b { display: block; color: var(--ink-2); font-size: 15px; }
 .row-body { min-width: 0; }
@@ -439,6 +463,8 @@ svg { width: 1em; height: 1em; flex: none; }
 .chip.imp-4 { background: var(--gold-soft); color: var(--gold); font-weight: 700; }
 .chip.up { background: var(--up-soft); color: var(--up); }
 .chip.down { background: var(--down-soft); color: var(--down); }
+.chip.soon { background: var(--gold-soft); color: var(--gold); font-weight: 700; }
+.chip .cflag { margin-right: 2px; }
 .chip.speaker { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .row-save {
   width: 36px; height: 36px; border-radius: 11px; border: 0; background: transparent;
@@ -527,6 +553,15 @@ svg { width: 1em; height: 1em; flex: none; }
 .val strong { display: block; font: 700 15px var(--num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .val.actual { background: var(--accent-soft); }
 .val.actual strong { color: var(--accent); }
+.val.actual.up { background: var(--up-soft); } .val.actual.up strong { color: var(--up); }
+.val.actual.down { background: var(--down-soft); } .val.actual.down strong { color: var(--down); }
+.ev.soon { background: color-mix(in srgb, var(--gold-soft) 55%, transparent); }
+.ev-time small .cflag { width: 12px; height: 12px; }
+.ne-surprise { margin: 12px 0 0; font-weight: 700; font-size: 14px; color: var(--accent); }
+.ne-surprise.up { color: var(--up); } .ne-surprise.down { color: var(--down); }
+.bcard .bres { display: block; margin-top: 3px; font: 600 12px var(--num); color: var(--accent); }
+.bcard .bres.up { color: var(--up); } .bcard .bres.down { color: var(--down); }
+.bcard time .cflag { width: 11px; height: 11px; }
 .ev-links { grid-column: 2; display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
 
 /* board view (曜日ごとの列) */
@@ -639,12 +674,18 @@ svg { width: 1em; height: 1em; flex: none; }
   .brand-mark { width: 34px; height: 34px; border-radius: 11px; }
   .brand-mark span { font-size: 19px; }
   .brand-text strong { font-size: 16px; }
-  .ratebar { top: calc(52px + env(safe-area-inset-top, 0px)); padding: 0 10px 6px; }
-  .ratebar-inner { padding: 4px 4px 4px 10px; min-height: 56px; gap: 8px; }
-  .pair-name small { display: none; }
-  .pair-flags { width: 34px; }
-  .flag { width: 22px; height: 22px; }
-  .flag.jp { left: 12px; }
+  .ratebar { position: static; padding: 0 10px 6px; }
+  .ratebar-inner { gap: 6px; }
+  .rate-card { height: 96px; border-radius: var(--r-md); }
+  .alert-bar { padding: 0 10px 6px; }
+  .alert-bar { gap: 4px; }
+  .alert { border-radius: 12px; }
+  .alert:nth-child(n+3) { display: none; }
+  .alert-main { padding: 7px 8px; gap: 6px; }
+  .alert-label { height: 20px; padding: 0 7px; font-size: 11px; }
+  .alert-main strong { font-size: 12.5px; max-width: 45%; }
+  .alert-text { font-size: 12px; }
+  .alert-close { width: 30px; height: 30px; }
   .screens { padding: 4px 12px 0; }
   .screen-head h1 { font-size: 23px; }
   .tiles { gap: 8px; }
