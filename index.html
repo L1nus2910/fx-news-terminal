@@ -12,7 +12,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="FX速報">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <script>
     // テーマを描画前に適用（ちらつき防止）
@@ -26,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/app.css?v=202610200239">
+  <link rel="stylesheet" href="assets/app.css?v=202610200240">
 </head>
 <body>
   <!-- SVG アイコン定義 -->
@@ -64,7 +65,7 @@
       <div class="topbar-inner">
         <button class="icon-btn back-btn" id="back-btn" type="button" aria-label="ホームに戻る" hidden><svg><use href="#i-back"/></svg></button>
         <a class="brand" href="#/" aria-label="FX速報 AI ホーム">
-          <span class="brand-mark" aria-hidden="true"><span>¥</span></span>
+          <img class="brand-mark" src="icons/logo-96.png" alt="" width="38" height="38">
           <span class="brand-text"><strong>FX速報 AI</strong><small id="screen-title">ドル円・豪ドル ダッシュボード</small></span>
         </a>
         <div class="topbar-actions">
@@ -326,6 +327,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/app.js?v=202610200239" defer></script>
+  <script src="assets/app.js?v=202610200240" defer></script>
 </body>
 </html>

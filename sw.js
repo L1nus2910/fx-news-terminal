@@ -1,14 +1,15 @@
 /* FX速報 AI — service worker
    アプリの骨組みだけをキャッシュして、オフラインでも画面が開くようにする。
    ニュースやレートなど外部のデータはキャッシュしない（常に最新を取得）。 */
-const VERSION = "fx-shell-v5";
+const VERSION = "fx-shell-v6";
 const SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/apple-touch-icon.png",
+  "./icons/logo-96.png"
 ];
 
 self.addEventListener("install", event => {
