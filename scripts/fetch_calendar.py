@@ -542,9 +542,9 @@ def main() -> int:
             pass
 
     strength_path = DATA_DIR / "strength.json"
-    last_strength = 0.0
+    last_strength = float("-inf")  # 起動直後に必ず1回取得する
     x_path = DATA_DIR / "x_list.json"
-    last_x_fetch, last_x_json = 0.0, None
+    last_x_fetch, last_x_json = float("-inf"), None
     translations: dict[str, str] = {}
     if x_path.exists():
         try:
@@ -562,7 +562,10 @@ def main() -> int:
                 publish("通貨強弱を更新")
                 print("strength written", flush=True)
             except Exception as error:  # noqa: BLE001
-                print(f"strength failed ({type(error).__name__}: {str(error)[:120]})", file=sys.stderr, flush=True)
+                detail = f"{type(error).__name__}: {getattr(error, 'code', '')} {str(error)[:160]}"
+                print(f"strength failed ({detail})", file=sys.stderr, flush=True)
+                (DATA_DIR / "strength_status.json").write_text(json.dumps({"checked_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "error": detail}))
+                publish("通貨強弱の取得状況")
         if time.monotonic() - last_x_fetch >= X_INTERVAL:
             last_x_fetch = time.monotonic()
             try:
