@@ -1,689 +1,312 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-theme="auto">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>FX速報 AI | USD/JPY</title>
-  <style>
-    :root{color-scheme:dark;--bg:#0b1220;--panel:#111b2c;--line:#243249;--muted:#9aabc2;--text:#edf4ff;--green:#42d392;--red:#ff7185;--blue:#72a7ff;--gold:#f6c66a}
-    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a3150 0,transparent 55%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
-    .wrap{width:min(1120px,calc(100% - 32px));margin:auto;padding:28px 0 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#377dff,#55d6b2);display:grid;place-items:center;font-weight:900;color:#06121e}.brand h1{font-size:20px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.status{font-size:12px;color:var(--gold);border:1px solid #64502c;background:#312817;padding:8px 12px;border-radius:99px;white-space:nowrap}
-    .notice{padding:12px 15px;border:1px solid #574922;background:#241f13;color:#f3d99c;border-radius:12px;font-size:13px;line-height:1.6;margin-bottom:16px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.card{background:linear-gradient(145deg,#131f31,#101827);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 30px #0002}.label{font-size:12px;color:var(--muted);letter-spacing:.04em}.price{font-size:clamp(34px,7vw,54px);font-weight:750;letter-spacing:-.04em;margin:8px 0 2px}.change{color:var(--green);font-size:14px}.price-head{display:flex;justify-content:space-between;align-items:flex-start}.pill{font-size:11px;border-radius:99px;padding:6px 9px;background:#172844;color:#9dbbff}.rate-widget{margin-top:14px;min-height:84px;display:flex;align-items:center}.rate-widget tv-single-ticker{display:block;width:100%;--tv-color-platform-background:transparent;--tv-color-pane-background:transparent;--tv-color-widget-background:transparent;--tv-color-widget-element-background-hover:#1a2940;--tv-color-toolbar-button-text:#edf4ff;--tv-color-toolbar-button-text-hover:#fff;--tv-color-toolbar-button-background-hover:#1a2940;--tv-color-text:#edf4ff;--tv-color-hairline:#243249}.statrow{display:flex;gap:24px;margin-top:6px}.statrow div{font-size:12px;color:var(--muted)}.statrow strong{display:block;color:var(--text);font-size:14px;margin-top:4px}
-    .section-title{display:flex;align-items:center;justify-content:space-between;margin:24px 2px 12px}.section-title h2{font-size:16px;margin:0}.section-title span{font-size:12px;color:var(--muted)}.feed{display:grid;gap:10px}.news{display:grid;grid-template-columns:72px 1fr auto;gap:13px;align-items:start;padding:15px;background:#111b2b;border:1px solid var(--line);border-radius:13px}.time{font-size:12px;color:var(--muted);padding-top:2px}.headline{font-size:14px;line-height:1.55}.headline strong{display:block;margin-bottom:4px}.headline a{color:var(--text);text-decoration:none}.headline a:hover{color:var(--blue)}.meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.tag{font-size:10px;padding:4px 7px;border-radius:99px;background:#1b2940;color:#b4c6df}.tag.alert{color:#ffb4bf;background:#3a202a}.impact{font-size:11px;color:var(--gold);white-space:nowrap}.empty{border:1px dashed #35445c;border-radius:13px;padding:18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.65}.foot{font-size:11px;color:#8191a8;line-height:1.7;margin-top:18px}
-    .calendar-feed{display:grid;gap:9px;margin-top:16px}.calendar-event{padding:12px;background:#111b2b;border:1px solid var(--line);border-radius:12px}.event-top{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.event-impact.high{color:#ff9ba8}.event-impact.medium{color:var(--gold)}.event-impact.low{color:var(--green)}.event-name{font-size:13px;font-weight:700;margin:8px 0;line-height:1.5}.event-name a{color:inherit;text-decoration:underline;text-decoration-color:#536783;text-underline-offset:3px}.event-reference-link{display:inline-block;margin:0 8px 9px 0;color:#9dbbff;font-size:11px}.event-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.event-value{padding:6px 0 0;background:transparent;border-top:1px solid var(--line);min-width:0}.event-value span{display:block;color:var(--muted);font-size:10px}.event-value strong{display:block;font-size:13px;margin-top:3px;overflow-wrap:anywhere}.calendar-credit{font-size:10px;color:var(--muted);margin:12px 0 0}.calendar-credit a{color:#9dbbff}
-    .tabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;background:#0e1828;border:1px solid var(--line);border-radius:13px}.tab-button{flex:1;min-width:0;border:0;border-radius:9px;padding:11px 9px;background:transparent;color:var(--muted);font:600 13px system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;white-space:nowrap}.tab-button[aria-selected="true"]{background:#203553;color:var(--text);box-shadow:0 2px 8px #0003}.tab-button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.tab-panel[hidden]{display:none}.tab-panel>.card{max-width:800px;margin:0 auto}
-    .rate-bar{position:sticky;top:8px;z-index:10;margin-bottom:14px}.rate-bar .card{padding:10px 16px;background:#111b2cf2;backdrop-filter:blur(12px);box-shadow:0 8px 24px #0006}.rate-bar .price-head{align-items:center}.rate-bar .rate-widget{min-height:56px;margin-top:4px}.rate-bar .statrow{margin-top:0}
-    .news-filter-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;margin:-4px 0 12px;color:var(--muted);font-size:12px}.news-filter-row select,.news-filter-row input[type=search]{max-width:220px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#111b2b;color:var(--text);font:inherit}.news-filter-row input[type=search]{width:190px}
-    .x-timeline{display:block;margin-top:16px;min-height:520px}.x-timeline .twitter-timeline{color:var(--blue)}.x-open-list{display:inline-block;margin-top:12px;color:var(--blue)}
-    #panel-market>.card{max-width:1120px}.market-section{margin-top:20px}.market-section h3{font-size:14px;margin:0 0 9px}.market-widget{width:100%;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#111b2b}.market-widget forex-table{display:block;width:100%;min-height:430px}.market-note{font-size:11px;color:var(--muted);line-height:1.65;margin:12px 0 0}.market-credit{font-size:10px;color:var(--muted);line-height:1.6;margin-top:14px}.market-credit a{color:#9dbbff}
-    /* Layout refinements */
-    :root{--bg:#09111f;--panel:#111c2e;--line:#263852;--muted:#a9b8cc;--text:#f1f6ff}
-    body{line-height:1.5;background:radial-gradient(ellipse at 50% -24%,#203b5e 0,transparent 58%),var(--bg)}
-    .wrap{width:min(1200px,calc(100% - 48px));padding-top:30px}
-    .top{margin-bottom:20px}
-    .notice{max-width:940px;margin:0 auto 18px;padding:11px 15px}
-    .rate-bar{max-width:940px;margin:0 auto 16px;top:8px}
-    .rate-bar .card{padding:9px 18px}
-    .rate-bar .rate-widget{min-height:52px}
-    .tabs{max-width:940px;margin:0 auto 20px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:5px}
-    .tab-button{padding:10px 6px;font-size:13px}
-    .tab-panel{max-width:940px;margin:0 auto}
-    .tab-panel>.card{max-width:none;padding:24px}
-    #panel-market>.card{max-width:none}
-    .section-title{margin:0 2px 12px}
-    .section-title h2{font-size:18px}
-    .feed{gap:9px}
-    .news{padding:16px 18px;grid-template-columns:68px minmax(0,1fr) auto;gap:14px}
-    .headline{font-size:14px;line-height:1.65}
-    .news-filter-row{justify-content:flex-start;margin:0 0 14px;padding:12px;background:#0d1727;border:1px solid var(--line);border-radius:12px;gap:8px}
-    .news-filter-row select,.news-filter-row input[type=search]{max-width:none;min-height:38px}
-    .news-filter-row input[type=search]{width:min(220px,100%)}
-    .calendar-feed{gap:10px}
-    .calendar-event{padding:14px 16px}
-    .event-name{font-size:14px}
-    .event-values{gap:14px}
-    .market-section{margin-top:22px}
-    .market-widget forex-table{min-height:460px}
-    .foot{max-width:940px;margin:18px auto 0}
-    button,select,input{touch-action:manipulation}
-    @media(min-width:721px){.news-filter-row label{margin-left:6px}.news-filter-row label:first-child{margin-left:0}}
-    @media(max-width:720px){
-      .wrap{width:min(100% - 24px,600px);padding:16px 0 32px}
-      .top{align-items:flex-start;gap:10px;margin-bottom:15px}
-      .logo{width:38px;height:38px}
-      .brand h1{font-size:17px}
-      .brand p{font-size:11px}
-      .status{font-size:10px;padding:6px 8px;margin-top:2px}
-      .notice{font-size:12px;margin-bottom:12px;padding:10px 12px}
-      .rate-bar{top:4px;margin-bottom:12px}
-      .rate-bar .card{padding:8px 12px;border-radius:14px}
-      .rate-bar .rate-widget{min-height:46px;margin-top:2px}
-      .rate-bar .statrow{gap:18px}
-      .tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-bottom:14px;padding:4px;border-radius:12px}
-      .tab-button{padding:9px 3px;font-size:12px;white-space:normal;line-height:1.25;min-height:38px}
-      .tab-panel>.card{padding:16px;border-radius:14px}
-      .section-title{align-items:flex-start;gap:8px;margin:0 1px 10px}
-      .section-title h2{font-size:16px}
-      .section-title span{font-size:10px;text-align:right}
-      .news{grid-template-columns:48px minmax(0,1fr);gap:8px 10px;padding:13px 12px}
-      .time{font-size:11px}
-      .headline{font-size:13px}
-      .impact{grid-column:2;justify-self:start}
-      .news-filter-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 10px;margin:0 0 12px;padding:10px}
-      .news-filter-row select,.news-filter-row input[type=search]{width:100%;max-width:none;min-width:0;padding:8px;font-size:12px}
-      .news-filter-row input[type=search]{width:100%}
-      .calendar-event{padding:12px}
-      .event-values{gap:9px}
-      .event-value span{font-size:9px}
-      .event-value strong{font-size:12px}
-      .x-timeline{min-height:420px}
-      .market-widget forex-table{min-height:400px}
-      .foot{font-size:10px;margin-top:14px}
-    }
-    @media(max-width:390px){
-      .wrap{width:calc(100% - 18px)}
-      .brand{gap:8px}
-      .brand p{max-width:155px}
-      .status{font-size:9px;padding:6px 7px}
-      .tab-button{font-size:11px}
-      .statrow{gap:12px}
-      .rate-bar .statrow div{font-size:10px}
-    }
-    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
-  </style>
+  <meta name="description" content="ドル円の速報ニュース、要人発言、経済指標、通貨強弱、チャートをまとめて確認できる個人向けFXダッシュボード。">
+  <meta name="theme-color" content="#EEF2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1322" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FX速報">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script>
+    // テーマを描画前に適用（ちらつき防止）
+    (function () {
+      try {
+        var t = localStorage.getItem("fx-theme") || "auto";
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
-  <main class="wrap">
-    <header class="top">
-      <div class="brand"><div class="logo" aria-hidden="true">FX</div><div><h1>FX速報 AI</h1><p>為替ニュース・マーケットダッシュボード</p></div></div>
-      <div class="status" id="connection-status" aria-live="polite">● データを確認中</div>
-    </header>
-    <div class="notice"><strong>お知らせ：</strong>このサイトで為替レート、公式ニュース、経済指標を確認できます。投資判断の前に、必ず情報源の原文をご確認ください。</div>
-    <section class="rate-bar" aria-label="常時表示の為替レート">
-      <article class="card">
-        <div class="price-head"><div><div class="label">米ドル / 日本円　USD/JPY</div><div class="change">現在の為替レート</div></div><span class="pill">TradingView</span></div>
-        <div class="rate-widget" aria-label="米ドルと日本円の現在レート">
-          <tv-single-ticker symbol="FX:USDJPY" hide-market-status size="large" theme="dark" force-theme locale="ja" transparent></tv-single-ticker>
+  <!-- SVG アイコン定義 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-news" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 9h10M7 12.5h10M7 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15" r="1.6" fill="currentColor"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 5.5 16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-4-6 4V5.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-bookmark-fill" viewBox="0 0 24 24"><path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-4-6 4V5.5a1 1 0 0 1 1-1z" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4.5V8h-3.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 13.5V18a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 18V9a1.5 1.5 0 0 1 1.5-1.5H11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+
+      <!-- メニュー用デュオトーンアイコン -->
+      <symbol id="t-news" viewBox="0 0 32 32"><rect x="5" y="6" width="22" height="20" rx="4" fill="currentColor" opacity=".22"/><path d="M10 12h12M10 16.5h12M10 21h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="24.5" cy="7.5" r="3.5" fill="currentColor"/></symbol>
+      <symbol id="t-speak" viewBox="0 0 32 32"><rect x="11" y="4" width="10" height="15" rx="5" fill="currentColor" opacity=".22"/><rect x="13.5" y="7" width="5" height="9" rx="2.5" fill="currentColor"/><path d="M8 15a8 8 0 0 0 16 0M16 23v5M11.5 28h9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="t-cal" viewBox="0 0 32 32"><rect x="5" y="7" width="22" height="20" rx="4" fill="currentColor" opacity=".22"/><path d="M5 13h22M11 4.5v5M21 4.5v5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M10.5 22.5 14 19l3 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="t-heat" viewBox="0 0 32 32"><rect x="5" y="5" width="10" height="10" rx="2.5" fill="currentColor"/><rect x="17" y="5" width="10" height="10" rx="2.5" fill="currentColor" opacity=".4"/><rect x="5" y="17" width="10" height="10" rx="2.5" fill="currentColor" opacity=".22"/><rect x="17" y="17" width="10" height="10" rx="2.5" fill="currentColor" opacity=".7"/></symbol>
+      <symbol id="t-x" viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" rx="7" fill="currentColor" opacity=".18"/><path d="M10 9.5h3.6l8.4 13h-3.6zM21.6 9.5 10.4 22.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="t-chart" viewBox="0 0 32 32"><path d="M5 26h22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".35"/><rect x="7" y="13" width="4" height="9" rx="1.2" fill="currentColor" opacity=".35"/><path d="M9 9.5v16" stroke="currentColor" stroke-width="1.6" opacity=".35"/><rect x="14" y="9" width="4" height="10" rx="1.2" fill="currentColor"/><path d="M16 5.5v17" stroke="currentColor" stroke-width="1.6"/><rect x="21" y="11" width="4" height="7" rx="1.2" fill="currentColor" opacity=".6"/><path d="M23 7.5v14" stroke="currentColor" stroke-width="1.6" opacity=".6"/></symbol>
+      <symbol id="t-saved" viewBox="0 0 32 32"><path d="M9 5h14a2 2 0 0 1 2 2v20l-9-5.5L7 27V7a2 2 0 0 1 2-2z" fill="currentColor" opacity=".22"/><path d="M11 5h10a2 2 0 0 1 2 2v14l-7-4.2L9 21V7a2 2 0 0 1 2-2z" fill="currentColor"/></symbol>
+      <symbol id="t-gear" viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" fill="currentColor" opacity=".22"/><circle cx="16" cy="16" r="4.2" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.5v4M16 23.5v4M4.5 16h4M23.5 16h4M7.9 7.9l2.8 2.8M21.3 21.3l2.8 2.8M7.9 24.1l2.8-2.8M21.3 10.7l2.8-2.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <!-- 上部バー -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <button class="icon-btn back-btn" id="back-btn" type="button" aria-label="ホームに戻る" hidden><svg><use href="#i-back"/></svg></button>
+        <a class="brand" href="#/" aria-label="FX速報 AI ホーム">
+          <span class="brand-mark" aria-hidden="true"><span>¥</span></span>
+          <span class="brand-text"><strong>FX速報 AI</strong><small id="screen-title">ドル円ダッシュボード</small></span>
+        </a>
+        <div class="topbar-actions">
+          <button class="status-chip" id="connection-status" type="button" aria-live="polite" title="タップで最新に更新"><span class="dot"></span><span class="status-text">確認中</span></button>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="ダークモードに切り替え"><svg class="ico-sun"><use href="#i-sun"/></svg><svg class="ico-moon"><use href="#i-moon"/></svg></button>
         </div>
-        <div class="statrow"><div>表示<strong>レート・前日比</strong></div><div>通貨ペア<strong>USD/JPY</strong></div></div>
-        <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-single-ticker.js"></script>
-      </article>
-    </section>
-    <nav class="tabs" role="tablist" aria-label="表示する情報">
-      <button class="tab-button" id="tab-news" type="button" role="tab" aria-selected="true" aria-controls="panel-news" tabindex="0">速報ニュース</button>
-      <button class="tab-button" id="tab-speakers" type="button" role="tab" aria-selected="false" aria-controls="panel-speakers" tabindex="-1">要人発言</button>
-      <button class="tab-button" id="tab-calendar" type="button" role="tab" aria-selected="false" aria-controls="panel-calendar" tabindex="-1">経済指標</button>
-      <button class="tab-button" id="tab-market" type="button" role="tab" aria-selected="false" aria-controls="panel-market" tabindex="-1">通貨強弱</button>
-      <button class="tab-button" id="tab-x" type="button" role="tab" aria-selected="false" aria-controls="panel-x" tabindex="-1">X投稿</button>
-    </nav>
-    <section class="tab-panel" id="panel-news" role="tabpanel" aria-labelledby="tab-news" tabindex="0">
-      <div class="section-title"><h2>速報ニュース</h2><span id="news-status" aria-live="polite">ニュースを読み込んでいます</span></div>
-      <div class="news-filter-row" aria-label="ニュースの絞り込み">
-        <label for="news-search">キーワード</label><input id="news-search" type="search" placeholder="例：介入、FOMC" autocomplete="off">
-        <label for="news-source-filter">情報源</label><select id="news-source-filter"><option value="all">すべて</option></select>
-        <label for="news-importance-filter">重要度</label><select id="news-importance-filter"><option value="all">すべて</option><option value="5">★★★★★のみ</option><option value="4">★★★★以上</option><option value="3">★★★以上</option></select>
-        <label for="news-impact-filter">ドル円</label><select id="news-impact-filter"><option value="all">影響すべて</option><option value="up">上昇要因</option><option value="down">下落要因</option><option value="unclear">方向は内容次第</option></select>
       </div>
-      <section class="feed" id="news-feed" aria-label="速報ニュース"><div class="empty">Supabaseからニュースを読み込んでいます…</div></section>
-    </section>
-    <section class="tab-panel" id="panel-speakers" role="tabpanel" aria-labelledby="tab-speakers" tabindex="0" hidden>
-      <article class="card">
-        <div class="label">FRB・日銀・財務当局・政府関係者 <span id="speaker-status" aria-live="polite">ニュースを読み込んでいます</span></div>
-        <h2 style="font-size:19px;margin:10px 0 8px">要人発言 Tracker</h2>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">ドル円に関係する金融政策・為替・物価・雇用・貿易などの発言を、発表元の見出しとリンクで表示します。発言者や関連度は見出しの自動判定です。</p>
-        <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0">
-          <label for="speaker-region-filter">発言者</label><select id="speaker-region-filter"><option value="all">すべて</option><option value="fed">FRB</option><option value="japan">日本</option><option value="us">米政府</option></select>
+    </header>
+
+    <!-- 常時表示レート -->
+    <section class="ratebar" aria-label="USD/JPY の現在レート">
+      <div class="ratebar-inner">
+        <div class="pair">
+          <span class="pair-flags" aria-hidden="true"><i class="flag us"></i><i class="flag jp"></i></span>
+          <span class="pair-name"><strong>USD/JPY</strong><small>米ドル / 日本円</small></span>
         </div>
-        <section class="feed" id="speaker-feed" aria-live="polite"><div class="empty">発言情報を読み込んでいます…</div></section>
-        <p class="market-credit">主な取得元：<a href="https://www.federalreserve.gov/feeds/feeds.htm" target="_blank" rel="noopener noreferrer">FRB公式スピーチ・証言RSS</a>、<a href="https://www.mof.go.jp/news.rss" target="_blank" rel="noopener noreferrer">財務省RSS</a>、日本銀行、ブルームバーグ日本語。元記事で内容と文脈をご確認ください。</p>
-      </article>
+        <div class="ticker-host" id="ticker-host"></div>
+        <a class="ratebar-link" href="#/chart" aria-label="チャートを開く"><svg><use href="#i-right"/></svg></a>
+      </div>
     </section>
-    <section class="tab-panel" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" tabindex="0" hidden>
-      <article class="card">
-        <div class="label">今後14日間・重要度ランク付き <span id="calendar-status" aria-live="polite">更新確認中</span></div>
-        <h2 style="font-size:19px;margin:10px 0 8px">経済指標・イベント</h2>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">前回・市場予想・実績を表示します。重要度は日米の金融政策・CPI/PCE・米雇用統計を高、それに次ぐ主要指標を中として判定し、データ元のランクも反映します。相場の実際の反応を予測するものではありません。— は未公表または未取得です。イベント名から詳細を確認できます。</p>
-        <div class="news-filter-row" style="justify-content:flex-start;margin:14px 0 0">
-          <label for="calendar-region-filter">対象地域</label><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select>
-          <label for="calendar-importance-filter">重要度</label><select id="calendar-importance-filter"><option value="all">すべて</option><option value="high">高のみ</option><option value="medium">中以上</option></select>
+
+    <main class="screens" id="main">
+
+      <!-- ホーム -->
+      <section class="screen" data-screen="home" aria-label="ホーム">
+        <div class="home-search">
+          <label class="search big"><svg><use href="#i-news"/></svg><input id="global-search" type="search" placeholder="ニュース・要人・指標を検索（例：パウエル、CPI）" autocomplete="off" aria-label="まとめて検索"></label>
+          <div class="search-results" id="global-results" hidden></div>
         </div>
-        <div class="calendar-feed" id="calendar-feed" aria-live="polite"><div class="empty">経済イベントを読み込んでいます…</div></div>
-        <p class="calendar-credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>（無料API）</p>
-      </article>
-    </section>
-    <section class="tab-panel" id="panel-market" role="tabpanel" aria-labelledby="tab-market" tabindex="0" hidden>
-      <article class="card">
-        <div class="label">市場の値動き <span id="market-status" aria-live="polite">タブを開くと読み込みます</span></div>
-        <h2 style="font-size:19px;margin:10px 0 8px">通貨強弱</h2>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">主要通貨ペアの値動きをもとに、各通貨の強弱を確認できます。</p>
-        <div class="market-section"><h3>通貨強弱ヒートマップ（前日比）</h3><div class="market-widget" id="forex-table-host"><div class="empty">表示準備中…</div></div></div>
-        <p class="market-note">通貨強弱ヒートマップは前日比の参考表示です。将来の値動きや売買判断を示すものではありません。</p>
-        <p class="market-credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView Forex Table</a></p>
-      </article>
-    </section>
-    <section class="tab-panel" id="panel-x" role="tabpanel" aria-labelledby="tab-x" tabindex="0" hidden>
-      <article class="card">
-        <div class="label">公開Xリストの投稿</div>
-        <h2 style="font-size:19px;margin:10px 0 8px">X投稿</h2>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">追加したアカウントの投稿をXの公式タイムラインで表示します。表示には公開リストが必要です。日本語訳や重要度判定は行いません。</p>
-        <div class="x-timeline" id="x-timeline"><a class="twitter-timeline" data-theme="dark" data-height="650" href="https://twitter.com/i/lists/2104983692594839644">FX速報リストの投稿を読み込んでいます…</a></div>
-        <a class="x-open-list" href="https://x.com/i/lists/2104983692594839644" target="_blank" rel="noopener noreferrer">Xでリストを開く ↗</a>
-      </article>
-    </section>
-    <p class="foot">個人向けの情報整理用ダッシュボードです。重要度とドル円への影響は、ニュース見出し等のキーワードによる簡易な目安で、AIによる分析や売買推奨ではありません。内容を誤判定する場合があります。投資判断の前に、必ず情報源の原文をご確認ください。</p>
-  </main>
-  <script>
-    const SUPABASE_URL = "https://swmbphjtvtkjrnvkytxw.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_y2K68m77MF9DYV55qFQorg_nC6DflY4";
-    const feed = document.getElementById("news-feed");
-    const newsStatus = document.getElementById("news-status");
-    const connectionStatus = document.getElementById("connection-status");
-    const calendarFeed = document.getElementById("calendar-feed");
-    const calendarStatus = document.getElementById("calendar-status");
-    const calendarRegionFilter = document.getElementById("calendar-region-filter");
-    const calendarImportanceFilter = document.getElementById("calendar-importance-filter");
-    const newsSourceFilter = document.getElementById("news-source-filter");
-    const newsSearch = document.getElementById("news-search");
-    const newsImportanceFilter = document.getElementById("news-importance-filter");
-    const newsImpactFilter = document.getElementById("news-impact-filter");
-    const speakerFeed = document.getElementById("speaker-feed");
-    const speakerStatus = document.getElementById("speaker-status");
-    const speakerRegionFilter = document.getElementById("speaker-region-filter");
-    const marketStatus = document.getElementById("market-status");
-    const forexTableHost = document.getElementById("forex-table-host");
-    const tabButtons = [...document.querySelectorAll('[role="tab"]')];
-    let newsItems = [];
-    let newsUpdatedAt = "";
-    let xWidgetsLoading = false;
-    let calendarEvents = [];
-    let marketLoaded = false;
+        <div class="home-grid">
+          <div class="home-main">
+            <div class="block b-pickup">
+              <div class="block-head"><h2>速報ピックアップ</h2><a class="block-link" href="#/news">すべてのニュース</a></div>
+              <div class="pickup" id="pickup" aria-roledescription="カルーセル">
+                <div class="pickup-track" id="pickup-track">
+                  <div class="pickup-card skeleton"><div class="sk-line w40"></div><div class="sk-line w90"></div><div class="sk-line w70"></div></div>
+                </div>
+                <div class="dots" id="pickup-dots" role="tablist" aria-label="ピックアップの切り替え"></div>
+              </div>
+            </div>
 
-    newsSourceFilter.addEventListener("change", renderNewsList);
-    newsSearch.addEventListener("input", renderNewsList);
-    newsImportanceFilter.addEventListener("change", renderNewsList);
-    newsImpactFilter.addEventListener("change", renderNewsList);
-    calendarRegionFilter.addEventListener("change", renderCalendarEvents);
-    calendarImportanceFilter.addEventListener("change", renderCalendarEvents);
-    speakerRegionFilter.addEventListener("change", renderSpeakerTracker);
-    function activateTab(button, moveFocus = false) {
-      tabButtons.forEach(tab => {
-        const selected = tab === button;
-        tab.setAttribute("aria-selected", String(selected));
-        tab.tabIndex = selected ? 0 : -1;
-        document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
-      });
-      if (button.id === "tab-x") loadXWidgets();
-      if (button.id === "tab-market") loadMarketWidgets();
-      if (moveFocus) button.focus();
-    }
+            <div class="block b-next">
+              <div class="block-head"><h2>次の重要指標</h2><a class="block-link" href="#/calendar">指標カレンダー</a></div>
+              <article class="next-event" id="next-event">
+                <div class="sk-line w40"></div><div class="sk-line w90"></div><div class="sk-line w70"></div>
+              </article>
+            </div>
 
-    function loadXWidgets() {
-      const timeline = document.getElementById("x-timeline");
-      if (window.twttr?.widgets) {
-        window.twttr.widgets.load(timeline);
-        return;
-      }
-      if (xWidgetsLoading) return;
-      xWidgetsLoading = true;
-      const script = document.createElement("script");
-      script.src = "https://platform.twitter.com/widgets.js";
-      script.async = true;
-      script.charset = "utf-8";
-      script.onload = () => {
-        xWidgetsLoading = false;
-        window.twttr?.widgets?.load(timeline);
-      };
-      script.onerror = () => {
-        xWidgetsLoading = false;
-        timeline.innerHTML = '<div class="empty">Xのタイムラインを読み込めませんでした。ブラウザの設定や通信環境で埋め込みが制限されている可能性があります。下のリンクからリストを開けます。</div>';
-      };
-      document.body.append(script);
-    }
+            <div class="block b-news">
+              <div class="block-head"><h2>最新ニュース</h2><span class="block-meta" id="home-news-meta"></span></div>
+              <div class="list-card" id="home-news"><div class="empty">ニュースを読み込んでいます</div></div>
+            </div>
+          </div>
 
-    tabButtons.forEach((button, index) => {
-      button.addEventListener("click", () => activateTab(button));
-      button.addEventListener("keydown", event => {
-        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-        event.preventDefault();
-        const direction = event.key === "ArrowRight" ? 1 : -1;
-        activateTab(tabButtons[(index + direction + tabButtons.length) % tabButtons.length], true);
-      });
-    });
+          <aside class="home-side">
+            <div class="block b-menu">
+              <div class="block-head"><h2>メニュー</h2></div>
+              <nav class="tiles" aria-label="機能メニュー">
+                <a class="tile" href="#/news" style="--tile:var(--hue-news)"><svg><use href="#t-news"/></svg><span>速報ニュース</span><small id="sub-news">公式・報道</small></a>
+                <a class="tile" href="#/speakers" style="--tile:var(--hue-speak)"><svg><use href="#t-speak"/></svg><span>要人発言</span><small id="sub-speak">FRB・日銀・財務省</small></a>
+                <a class="tile" href="#/calendar" style="--tile:var(--hue-cal)"><svg><use href="#t-cal"/></svg><span>経済指標</span><small id="sub-cal">米国・日本</small></a>
+                <a class="tile" href="#/market" style="--tile:var(--hue-heat)"><svg><use href="#t-heat"/></svg><span>通貨強弱</span><small>前日比</small></a>
+                <a class="tile" href="#/x" style="--tile:var(--hue-x)"><svg><use href="#t-x"/></svg><span>X投稿</span><small>公開リスト</small></a>
+                <a class="tile" href="#/chart" style="--tile:var(--hue-chart)"><svg><use href="#t-chart"/></svg><span>チャート</span><small>通貨ペア切替</small></a>
+              </nav>
+              <div class="quick">
+                <a class="quick-btn" href="#/calendar?scope=today"><svg><use href="#i-cal"/></svg>今日の指標</a>
+                <a class="quick-btn" href="#/news?importance=5"><svg><use href="#i-news"/></svg>重要度★5だけ</a>
+              </div>
+            </div>
 
-    function addTag(parent, text, alert = false) {
-      if (!text) return;
-      const tag = document.createElement("span");
-      tag.className = alert ? "tag alert" : "tag";
-      tag.textContent = text;
-      parent.append(tag);
-    }
+          </aside>
+        </div>
+      </section>
 
-    function updatedAtText() {
-      return new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" }).format(new Date());
-    }
+      <!-- 速報ニュース -->
+      <section class="screen" data-screen="news" aria-label="速報ニュース" hidden>
+        <div class="screen-head">
+          <h1>速報ニュース</h1>
+          <p id="news-status" aria-live="polite">ニュースを読み込んでいます</p>
+        </div>
+        <div class="filters" aria-label="ニュースの絞り込み">
+          <label class="search"><svg><use href="#i-news"/></svg><input id="news-search" type="search" placeholder="キーワードで探す（例：介入、FOMC）" autocomplete="off" aria-label="キーワード"></label>
+          <div class="seg" role="radiogroup" aria-label="重要度" id="news-importance">
+            <button type="button" role="radio" data-value="all" aria-checked="true">すべて</button>
+            <button type="button" role="radio" data-value="5" aria-checked="false">★5</button>
+            <button type="button" role="radio" data-value="4" aria-checked="false">★4以上</button>
+            <button type="button" role="radio" data-value="3" aria-checked="false">★3以上</button>
+          </div>
+          <div class="select-row">
+            <label class="select"><span>情報源</span><select id="news-source-filter"><option value="all">すべて</option></select></label>
+            <label class="select"><span>ドル円</span><select id="news-impact-filter"><option value="all">影響すべて</option><option value="up">上昇要因</option><option value="down">下落要因</option><option value="unclear">方向は内容次第</option></select></label>
+          </div>
+        </div>
+        <div class="list-card" id="news-feed"><div class="empty">ニュースを読み込んでいます</div></div>
+        <p class="credit">主な取得元：<a href="https://www.federalreserve.gov/feeds/feeds.htm" target="_blank" rel="noopener noreferrer">FRB公式RSS</a>、<a href="https://www.mof.go.jp/news.rss" target="_blank" rel="noopener noreferrer">財務省RSS</a>、日本銀行、ブルームバーグ日本語。重要度とドル円への影響は見出しのキーワードによる簡易な目安です。</p>
+      </section>
 
-    function sourceLabel(source) {
-      if (source === "日本銀行") return "日銀";
-      if (source === "Federal Reserve") return "FRB";
-      if (source === "FRB要人発言") return "FRB";
-      if (source === "ブルームバーグ日本語") return "ブルームバーグ";
-      return source || "情報源不明";
-    }
+      <!-- 要人発言 -->
+      <section class="screen" data-screen="speakers" aria-label="要人発言" hidden>
+        <div class="screen-head">
+          <h1>要人発言</h1>
+          <p id="speaker-status" aria-live="polite">読み込んでいます</p>
+        </div>
+        <p class="lead">FRB・日銀・財務当局・政府関係者の、金融政策や為替に関わる発言を見出しから拾って表示します。発言者は自動判定です。</p>
+        <div class="filters">
+          <div class="seg" role="radiogroup" aria-label="発言者" id="speaker-region">
+            <button type="button" role="radio" data-value="all" aria-checked="true">すべて</button>
+            <button type="button" role="radio" data-value="fed" aria-checked="false">FRB</button>
+            <button type="button" role="radio" data-value="japan" aria-checked="false">日本</button>
+            <button type="button" role="radio" data-value="us" aria-checked="false">米政府</button>
+          </div>
+        </div>
+        <div class="list-card" id="speaker-feed"><div class="empty">発言情報を読み込んでいます</div></div>
+      </section>
 
-    function renderNewsList() {
-      const selectedSource = newsSourceFilter.value;
-      const minimumImportance = newsImportanceFilter.value === "all" ? 0 : Number(newsImportanceFilter.value);
-      const selectedImpact = newsImpactFilter.value;
-      const query = newsSearch.value.trim().toLocaleLowerCase("ja-JP");
-      const items = newsItems.filter(item => {
-        if (selectedSource !== "all" && sourceLabel(item.source) !== selectedSource) return false;
-        if (Number(item.importance || 0) < minimumImportance) return false;
-        const impact = String(item.usd_jpy_impact || "");
-        if (selectedImpact === "up" && !impact.includes("上昇")) return false;
-        if (selectedImpact === "down" && !impact.includes("下落")) return false;
-        if (selectedImpact === "unclear" && !/(方向は内容次第|内容次第|方向は)/.test(impact)) return false;
-        if (query) {
-          const searchable = [item.source, item.title, item.original_text, item.japanese_text, item.summary, item.category, impact]
-            .filter(Boolean).join(" ").toLocaleLowerCase("ja-JP");
-          if (!searchable.includes(query)) return false;
-        }
-        return true;
-      }).slice(0, 30);
-      feed.replaceChildren();
-      if (!items.length) {
-        const filtersActive = query !== "" || selectedSource !== "all" || minimumImportance > 0 || selectedImpact !== "all";
-        feed.innerHTML = `<div class="empty">${newsItems.length ? (filtersActive ? "条件に合うニュースはありません。" : "ニュースはまだ登録されていません。") : "ニュースはまだ登録されていません。"}</div>`;
-      } else {
-        items.forEach(item => feed.append(renderNews(item)));
-      }
-      newsStatus.textContent = `表示 ${items.length}/${newsItems.length}件 · 更新 ${newsUpdatedAt}`;
-    }
+      <!-- 経済指標 -->
+      <section class="screen" data-screen="calendar" aria-label="経済指標" hidden>
+        <div class="screen-head">
+          <h1>経済指標</h1>
+          <p id="calendar-status" aria-live="polite">更新確認中</p>
+        </div>
+        <p class="lead">米国・日本の今後14日間のイベントです。重要度は日米の金融政策・CPI/PCE・米雇用統計を「高」として判定しています。— は未公表または未取得です。</p>
+        <div class="filters">
+          <div class="seg-row">
+            <div class="seg" role="radiogroup" aria-label="期間" id="calendar-scope">
+              <button type="button" role="radio" data-value="all" aria-checked="true">14日間</button>
+              <button type="button" role="radio" data-value="today" aria-checked="false">今日</button>
+              <button type="button" role="radio" data-value="week" aria-checked="false">7日間</button>
+            </div>
+            <div class="seg" role="radiogroup" aria-label="表示方法" id="calendar-view">
+              <button type="button" role="radio" data-value="list" aria-checked="true">リスト</button>
+              <button type="button" role="radio" data-value="board" aria-checked="false">ボード</button>
+            </div>
+          </div>
+          <div class="select-row">
+            <label class="select"><span>地域</span><select id="calendar-region-filter"><option value="all">米国・日本</option><option value="us">米国</option><option value="japan">日本</option></select></label>
+            <label class="select"><span>重要度</span><select id="calendar-importance-filter"><option value="all">すべて</option><option value="high">高のみ</option><option value="medium">中以上</option></select></label>
+          </div>
+        </div>
+        <div class="calendar" id="calendar-feed"><div class="empty">経済イベントを読み込んでいます</div></div>
+        <p class="credit">カレンダーデータ：<a href="https://www.financecalendar.com/" target="_blank" rel="noopener noreferrer">FinanceCalendar.com</a>　参考：<a href="https://www.oanda.jp/lab-education/calendar/" target="_blank" rel="noopener noreferrer">OANDA 経済指標カレンダー</a></p>
+      </section>
 
-    function speakerProfile(item) {
-      const text = [item.title, item.original_text, item.japanese_text, item.summary].filter(Boolean).join(" ");
-      const source = item.source || "";
-      const macro = /(為替|ドル円|円安|円高|円相場|介入|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|米国債|通貨|currency|foreign exchange|dollar|yen|interest rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds)/i.test(text);
-      const speech = /(発言|講演|会見|談話|挨拶|声明|証言|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|outlook)/i.test(text);
-      if (!macro) return null;
-      const profiles = [
-        { match: /Jerome H\. Powell|Jerome Powell|Powell|パウエル/i, name: "パウエル FRB議長", region: "fed" },
-        { match: /Michelle W\. Bowman|Michelle Bowman|Bowman|ボウマン/i, name: "ボウマン FRB理事", region: "fed" },
-        { match: /Christopher J\. Waller|Christopher Waller|Waller|ウォラー/i, name: "ウォラー FRB理事", region: "fed" },
-        { match: /Lisa D\. Cook|Lisa Cook|Cook|クック/i, name: "クック FRB理事", region: "fed" },
-        { match: /Philip N\. Jefferson|Philip Jefferson|Jefferson|ジェファーソン/i, name: "ジェファーソン FRB副議長", region: "fed" },
-        { match: /Bessent|ベッセント|Treasury Secretary|米財務長官/i, name: "米財務長官", region: "us" },
-        { match: /Trump|トランプ|President of the United States|米大統領|大統領/i, name: "米大統領", region: "us" },
-        { match: /Ueda|植田|日銀総裁|Bank of Japan Governor/i, name: "日銀総裁", region: "japan" },
-        { match: /日銀副総裁|Himino|氷見野|Uchida|内田/i, name: "日銀副総裁", region: "japan" },
-        { match: /財務大臣|財務相|Finance Minister|財務官|Vice-Minister of Finance/i, name: "財務大臣・財務官", region: "japan" },
-        { match: /首相|総理|Prime Minister/i, name: "日本の首相", region: "japan" }
-      ];
-      const person = profiles.find(profile => profile.match.test(text));
-      if (person) return speech || ["FRB要人発言", "日本銀行", "財務省"].includes(source) ? person : null;
-      if (source === "FRB要人発言" && speech) return { name: "FRB理事・地区連銀総裁", region: "fed" };
-      if (source === "日本銀行" && speech) return { name: "日銀要人", region: "japan" };
-      if (source === "財務省" && speech) return { name: "財務省要人", region: "japan" };
-      return null;
-    }
+      <!-- 通貨強弱 -->
+      <section class="screen" data-screen="market" aria-label="通貨強弱" hidden>
+        <div class="screen-head">
+          <h1>通貨強弱</h1>
+          <p id="market-status" aria-live="polite">前日比のヒートマップ</p>
+        </div>
+        <p class="lead">主要通貨ペアの前日比から、どの通貨が強いか・弱いかを一覧で見られます。将来の値動きを示すものではありません。</p>
+        <div class="widget-card" id="forex-table-host"><div class="empty">表示を準備しています</div></div>
+        <p class="credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView</a></p>
+      </section>
 
-    function renderSpeakerTracker() {
-      if (!speakerFeed) return;
-      const region = speakerRegionFilter.value;
-      const matches = newsItems.map(item => ({ item, speaker: speakerProfile(item) }))
-        .filter(row => row.speaker && (region === "all" || row.speaker.region === region))
-        .slice(0, 50);
-      speakerFeed.replaceChildren();
-      if (!matches.length) {
-        const empty = document.createElement("div"); empty.className = "empty";
-        empty.textContent = newsItems.length ? "該当する発言はまだありません。ニュース取得後に表示します。" : "発言情報を読み込んでいます…";
-        speakerFeed.append(empty);
-      } else {
-        matches.forEach(({ item, speaker }) => {
-          const article = renderNews(item);
-          const meta = article.querySelector(".meta");
-          if (meta) addTag(meta, `発言者：${speaker.name}`, true);
-          speakerFeed.append(article);
-        });
-      }
-      speakerStatus.textContent = `${matches.length}件 · 更新 ${newsUpdatedAt || "取得中"}`;
-    }
+      <!-- チャート -->
+      <section class="screen" data-screen="chart" aria-label="チャート" hidden>
+        <div class="screen-head">
+          <h1>チャート</h1>
+          <p>通貨ペアを切り替えて確認できます</p>
+        </div>
+        <div class="pair-chips" id="pair-chips" role="radiogroup" aria-label="通貨ペア">
+          <button type="button" role="radio" data-symbol="FX:USDJPY" aria-checked="true">USD/JPY</button>
+          <button type="button" role="radio" data-symbol="FX:EURJPY" aria-checked="false">EUR/JPY</button>
+          <button type="button" role="radio" data-symbol="FX:GBPJPY" aria-checked="false">GBP/JPY</button>
+          <button type="button" role="radio" data-symbol="FX:AUDJPY" aria-checked="false">AUD/JPY</button>
+          <button type="button" role="radio" data-symbol="FX:EURUSD" aria-checked="false">EUR/USD</button>
+          <button type="button" role="radio" data-symbol="TVC:DXY" aria-checked="false">ドル指数</button>
+        </div>
+        <div class="widget-card chart-card" id="chart-host"><div class="empty">チャートを準備しています</div></div>
+        <p class="credit">チャート：<a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a></p>
+      </section>
 
-    function renderNews(item) {
-      const article = document.createElement("article");
-      article.className = "news";
+      <!-- X投稿 -->
+      <section class="screen" data-screen="x" aria-label="X投稿" hidden>
+        <div class="screen-head">
+          <h1>X投稿</h1>
+          <p>公開リスト「FX速報」の投稿</p>
+        </div>
+        <p class="lead">Xの公式タイムラインを埋め込んで表示します。表示されない場合は、Xにログインしていないかブラウザが埋め込みを止めています。</p>
+        <a class="wide-btn" href="https://x.com/i/lists/2104983692594839644" target="_blank" rel="noopener noreferrer"><svg><use href="#i-ext"/></svg>Xアプリでリストを開く</a>
+        <div class="widget-card x-card" id="x-timeline"></div>
+      </section>
 
-      const date = item.published_at || item.fetched_at;
-      const time = document.createElement("div");
-      time.className = "time";
-      time.textContent = date
-        ? new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short" }).format(new Date(date))
-        : "日時不明";
+      <!-- 保存した記事 -->
+      <section class="screen" data-screen="saved" aria-label="保存した記事" hidden>
+        <div class="screen-head">
+          <h1>保存した記事</h1>
+          <p id="saved-status">あとで読むニュース</p>
+        </div>
+        <div class="list-card" id="saved-feed"></div>
+      </section>
 
-      const headline = document.createElement("div");
-      headline.className = "headline";
-      const title = document.createElement("strong");
-      if (item.url && /^https:\/\//i.test(item.url)) {
-        const link = document.createElement("a");
-        link.href = item.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = item.japanese_text || item.title || "（タイトルなし）";
-        title.append(link);
-      } else {
-        title.textContent = item.japanese_text || item.title || "（タイトルなし）";
-      }
-      headline.append(title);
+      <!-- メニュー -->
+      <section class="screen" data-screen="menu" aria-label="メニュー" hidden>
+        <div class="screen-head">
+          <h1>メニュー</h1>
+          <p>すべての機能と設定</p>
+        </div>
+        <nav class="tiles tiles-wide" aria-label="すべての機能">
+          <a class="tile" href="#/news" style="--tile:var(--hue-news)"><svg><use href="#t-news"/></svg><span>速報ニュース</span></a>
+          <a class="tile" href="#/speakers" style="--tile:var(--hue-speak)"><svg><use href="#t-speak"/></svg><span>要人発言</span></a>
+          <a class="tile" href="#/calendar" style="--tile:var(--hue-cal)"><svg><use href="#t-cal"/></svg><span>経済指標</span></a>
+          <a class="tile" href="#/chart" style="--tile:var(--hue-chart)"><svg><use href="#t-chart"/></svg><span>チャート</span></a>
+          <a class="tile" href="#/market" style="--tile:var(--hue-heat)"><svg><use href="#t-heat"/></svg><span>通貨強弱</span></a>
+          <a class="tile" href="#/x" style="--tile:var(--hue-x)"><svg><use href="#t-x"/></svg><span>X投稿</span></a>
+          <a class="tile" href="#/saved" style="--tile:var(--hue-saved)"><svg><use href="#t-saved"/></svg><span>保存した記事</span></a>
+        </nav>
 
-      const summaryText = item.summary || item.original_text;
-      if (summaryText) {
-        const summary = document.createElement("div");
-        summary.textContent = summaryText;
-        headline.append(summary);
-      }
+        <div class="settings">
+          <div class="setting">
+            <div><strong>表示テーマ</strong><small>「自動」は端末の設定に合わせます</small></div>
+            <div class="seg small" role="radiogroup" aria-label="表示テーマ" id="theme-seg">
+              <button type="button" role="radio" data-value="auto" aria-checked="true">自動</button>
+              <button type="button" role="radio" data-value="light" aria-checked="false">ライト</button>
+              <button type="button" role="radio" data-value="dark" aria-checked="false">ダーク</button>
+            </div>
+          </div>
+          <div class="setting" id="install-row" hidden>
+            <div><strong>アプリとして追加</strong><small>ホーム画面から1タップで開けます</small></div>
+            <button class="primary-btn small" id="install-btn" type="button">追加する</button>
+          </div>
+          <div class="setting" id="install-ios" hidden>
+            <div><strong>ホーム画面に追加</strong><small>Safariの共有ボタン →「ホーム画面に追加」でアプリのように使えます</small></div>
+          </div>
+        </div>
 
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      addTag(meta, item.source ? `情報源：${item.source}` : "情報源：不明");
-      addTag(meta, item.category);
-      if (item.verified) addTag(meta, "確認済み");
-      headline.append(meta);
+        <p class="disclaimer">個人向けの情報整理用ダッシュボードです。重要度とドル円への影響はニュース見出し等のキーワードによる簡易な目安で、AIによる分析や売買推奨ではありません。投資判断の前に、必ず情報源の原文をご確認ください。</p>
+      </section>
+    </main>
 
-      const impact = document.createElement("div");
-      impact.className = "impact";
-      const stars = Number.isFinite(Number(item.importance)) && item.importance
-        ? `重要度 ${"★".repeat(Math.max(1, Math.min(5, Number(item.importance))) )}`
-        : "影響判定 —";
-      impact.textContent = item.usd_jpy_impact ? `${stars} · ${item.usd_jpy_impact}` : stars;
+    <!-- 下部ナビ -->
+    <nav class="dock" aria-label="メインナビゲーション">
+      <a class="dock-item" href="#/" data-nav="home"><svg><use href="#i-home"/></svg><span>ホーム</span></a>
+      <a class="dock-item" href="#/news" data-nav="news"><svg><use href="#i-news"/></svg><span>ニュース</span></a>
+      <a class="dock-fab" href="#/chart" data-nav="chart" aria-label="チャート"><span class="coin"><b>¥</b></span><span class="fab-label">チャート</span></a>
+      <a class="dock-item" href="#/calendar" data-nav="calendar"><svg><use href="#i-cal"/></svg><span>指標</span></a>
+      <a class="dock-item" href="#/menu" data-nav="menu"><svg><use href="#i-menu"/></svg><span>メニュー</span></a>
+    </nav>
+  </div>
 
-      article.append(time, headline, impact);
-      return article;
-    }
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    async function loadNews() {
-      const endpoint = new URL(`${SUPABASE_URL}/rest/v1/news_items`);
-      endpoint.search = new URLSearchParams({
-        select: "source,title,original_text,japanese_text,summary,url,published_at,fetched_at,category,importance,usd_jpy_impact,verified",
-        order: "published_at.desc.nullslast,fetched_at.desc",
-        limit: "100"
-      });
-
-      try {
-        const response = await fetch(endpoint, {
-          headers: { apikey: SUPABASE_PUBLISHABLE_KEY }
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const items = await response.json();
-        newsItems = items;
-        newsUpdatedAt = updatedAtText();
-        connectionStatus.textContent = "● Supabase接続済み";
-        const options = [...new Set(items.map(item => sourceLabel(item.source)))].filter(label => label !== "情報源不明");
-        const previous = newsSourceFilter.value;
-        newsSourceFilter.replaceChildren(new Option("すべて", "all"));
-        options.forEach(label => newsSourceFilter.add(new Option(label, label)));
-        newsSourceFilter.value = options.includes(previous) ? previous : "all";
-        renderNewsList();
-        renderSpeakerTracker();
-      } catch (error) {
-        connectionStatus.textContent = "● 接続を確認できません";
-        newsStatus.textContent = "ニュースを読み込めませんでした";
-        newsItems = [];
-        feed.replaceChildren();
-        const message = document.createElement("div");
-        message.className = "empty";
-        message.textContent = "Supabaseとの接続に失敗しました。設定とテーブル権限を確認してください。";
-        feed.append(message);
-        newsStatus.textContent = "取得できません";
-        renderSpeakerTracker();
-      }
-    }
-
-    function loadMarketWidgets() {
-      if (marketLoaded) return;
-      marketLoaded = true;
-      marketStatus.textContent = "市場データを読み込み中";
-
-      const forexScript = document.createElement("script");
-      forexScript.type = "module";
-      forexScript.src = "https://widgets.tradingview-widget.com/w/en/tv-forex-table.js";
-      forexScript.onload = () => {
-        const table = document.createElement("tv-forex-table");
-        table.setAttribute("displayed-value", "dailyChange");
-        table.setAttribute("heatmap", "");
-        forexTableHost.replaceChildren(table);
-      };
-      forexScript.onerror = () => {
-        forexTableHost.innerHTML = '<div class="empty">通貨強弱を読み込めませんでした。<a href="https://www.tradingview.com/heatmap/forex/" target="_blank" rel="noopener noreferrer">TradingViewでForexヒートマップを開く</a></div>';
-      };
-      document.head.append(forexScript);
-
-    }
-
-    function localDateString(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    }
-
-    function displayValue(value) {
-      if (value === null || value === undefined || value === "") return "—";
-      const numbers = String(value).match(/[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:%|bps?|[KMB])?/gi);
-      return numbers?.length ? numbers.map(number => number.replace(/\s+/g, "")).join(" / ") : "—";
-    }
-
-    function japaneseEventName(event) {
-      const original = event.title || event.name || event.event || "イベント";
-      const region = eventRegion(event);
-      const cpiPrefix = region === "japan" ? "日本" : "米";
-      const rules = [
-        [/tokyo.*consumer price|tokyo.*\bcpi\b|東京都区部|東京.*CPI/i, "東京都区部消費者物価指数（東京CPI）"],
-        [/core consumer price index|core cpi|コアCPI/i, `${cpiPrefix}コア消費者物価指数（コアCPI）`],
-        [/consumer price index|\bcpi\b|消費者物価指数/i, `${cpiPrefix}消費者物価指数（CPI）`],
-        [/non[- ]?farm payroll|employment situation|us jobs report/i, "米雇用統計（非農業部門雇用者数）"],
-        [/unemployment rate/i, "米失業率"],
-        [/average hourly earnings/i, "米平均時給"],
-        [/producer price index|\bppi\b/i, "米生産者物価指数（PPI）"],
-        [/personal consumption expenditures|\bpce\b/i, "米個人消費支出（PCE）物価指数"],
-        [/fomc.*minutes|minutes.*fomc/i, "FOMC議事要旨"],
-        [/fomc|federal funds rate|fed.*rate decision/i, "FOMC政策金利発表"],
-        [/initial jobless claims|jobless claims/i, "米新規失業保険申請件数"],
-        [/retail sales/i, "米小売売上高"],
-        [/gross domestic product|\bgdp\b/i, "米国内総生産（GDP）"],
-        [/bank of japan|\bboj\b.*(rate|policy)|(rate|policy).*\bboj\b/i, "日銀金融政策"],
-        [/interest rate decision|central bank.*rate decision/i, "政策金利発表"]
-      ];
-      const match = rules.find(([pattern]) => pattern.test(original));
-      return match ? match[1] : original;
-    }
-
-    function impactRank(value) {
-      const level = Number(value);
-      if (level >= 3) return { text: "重要度：高 ★★★★★", className: "high" };
-      if (level === 2) return { text: "重要度：中 ★★★☆☆", className: "medium" };
-      if (level === 1) return { text: "重要度：低 ★☆☆☆☆", className: "low" };
-      return { text: "重要度：未設定", className: "" };
-    }
-
-    function isFxRelevantEvent(event) {
-      const title = [event.title, event.name, event.event].filter(Boolean).join(" ");
-      const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code]
-        .filter(Boolean).join(" ").toLowerCase();
-      if (/holiday|market open|market closed|stock market|exchange hours|trading hours|bank holiday/i.test(title)) return false;
-      const targetRegion = /\b(us|usa|united states|u\.s\.|usd|japan|jpy|jpn)\b|日本|米国|アメリカ/.test(region);
-      const otherRegion = /\b(canada|cad|australia|aud|eurozone|europe|eur|china|cny|uk|gbp|india|inr|switzerland|chf)\b|カナダ|豪州|オーストラリア|ユーロ圏|中国|英国|インド/.test(region);
-      if (targetRegion) return true;
-      if (otherRegion) return false;
-      if (/\b(us|usa|united states|u\.s\.|usd|japan|jpy|boj|fomc|fed|federal reserve)\b|日本|米国|アメリカ|日銀|米雇用統計/.test(title)) return true;
-      if (/core cpi|consumer price|inflation|\bcpi\b|\bpce\b|personal consumption|producer price|\bppi\b|non[- ]?farm|payroll|employment|jobless claims|unemployment|average hourly|\bgdp\b|gross domestic|\bism\b|\bpmi\b|retail sales|interest rate|rate decision|consumer confidence|durable goods|housing starts|industrial production|trade balance/i.test(title)) return true;
-      return false;
-    }
-
-    function eventRegion(event) {
-      const region = [event.country, event.country_name, event.country_code, event.currency, event.currency_code]
-        .filter(Boolean).join(" ").toLowerCase();
-      const title = [event.title, event.name, event.event].filter(Boolean).join(" ").toLowerCase();
-      if (/\b(us|usa|united states|u\.s\.|usd)\b|米国|アメリカ|\bfed\b|\bfomc\b|federal reserve/.test(region + " " + title)) return "us";
-      if (/\b(japan|jpn|jpy|boj)\b|日本|日銀|日本銀行|bank of japan/.test(region + " " + title)) return "japan";
-      return "other";
-    }
-
-    function eventImportanceScore(event) {
-      const value = String(event.impact ?? event.importance ?? "").toLowerCase();
-      const sourceScore = value === "high" || value === "3" ? 3
-        : value === "medium" || value === "med" || value === "2" ? 2
-        : value === "low" || value === "1" ? 1 : 0;
-      const title = [event.title, event.name, event.event].filter(Boolean).join(" ").toLowerCase();
-      const region = eventRegion(event);
-      const topTier = /consumer price index|\bcpi\b|personal consumption expenditures|\bpce\b|non[- ]?farm payroll|\bnfp\b|employment situation|federal funds rate|fed.*rate decision|fomc.*(rate|statement|decision|press conference)|interest rate decision|policy rate decision|bank of japan.*(rate|policy|meeting)|\bboj\b.*(rate|policy|meeting)|(rate|policy|meeting).*\bboj\b|東京都区部|全国.*消費者物価|日本.*コアcpi/;
-      const secondTier = /inflation|producer price index|\bppi\b|gross domestic product|\bgdp\b|retail sales|jobless claims|unemployment|employment|average hourly earnings|wage|\bjolts\b|\badp\b|\bism\b|\bpmi\b|tankan|industrial production|consumer confidence|fomc minutes|meeting minutes|summary of opinions|central bank.*speech|governor.*speech|testimony|intervention/;
-      if ((region === "us" || region === "japan") && topTier.test(title)) return 3;
-      if ((region === "us" || region === "japan") && secondTier.test(title)) return Math.max(sourceScore, 2);
-      return sourceScore;
-    }
-
-    function renderCalendarEvents() {
-      const selectedRegion = calendarRegionFilter.value;
-      const minimumImportance = calendarImportanceFilter.value === "high" ? 3 : calendarImportanceFilter.value === "medium" ? 2 : 0;
-      const visibleEvents = calendarEvents.filter(event =>
-        (selectedRegion === "all" || eventRegion(event) === selectedRegion) &&
-        eventImportanceScore(event) >= minimumImportance
-      );
-      calendarFeed.replaceChildren();
-      if (!visibleEvents.length) {
-        const filtersActive = selectedRegion !== "all" || minimumImportance > 0;
-        const label = selectedRegion === "us" ? "米国" : selectedRegion === "japan" ? "日本" : "米国・日本";
-        calendarFeed.innerHTML = `<div class="empty">${calendarEvents.length && filtersActive ? "条件に合うイベントはありません。" : `今後14日間にドル円関連の${label}のイベントはありません。`}</div>`;
-        return;
-      }
-      visibleEvents.forEach(event => calendarFeed.append(renderCalendarEvent(event)));
-    }
-
-    function renderCalendarEvent(event) {
-      const article = document.createElement("article");
-      article.className = "calendar-event";
-
-      const eventDate = event.time_utc || event.datetime || event.date;
-      const top = document.createElement("div");
-      top.className = "event-top";
-      const time = document.createElement("span");
-      time.textContent = eventDate
-        ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "short", timeStyle: event.all_day ? undefined : "short" }).format(new Date(eventDate))
-        : "日時未定";
-      const importance = document.createElement("span");
-      const rank = impactRank(eventImportanceScore(event));
-      importance.className = `event-impact ${rank.className}`;
-      importance.textContent = rank.text;
-      top.append(time, importance);
-
-      const name = document.createElement("div");
-      name.className = "event-name";
-      const eventUrl = safeFinanceCalendarUrl(event.url);
-      const eventLabel = japaneseEventName(event);
-      if (eventUrl) {
-        const link = document.createElement("a");
-        link.href = eventUrl;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = eventLabel;
-        name.append(link);
-      } else {
-        name.textContent = eventLabel;
-      }
-      const referenceUrl = kissFxDailyUrl(eventDate);
-      if (referenceUrl) {
-        const reference = document.createElement("a");
-        reference.className = "event-reference-link";
-        reference.href = referenceUrl;
-        reference.target = "_blank";
-        reference.rel = "noopener noreferrer";
-        reference.textContent = "同日の指標ランク・予想・前回値（羊飼いのFXブログ）";
-        article.append(top, name, reference);
-      } else {
-        article.append(top, name);
-      }
-      const oandaReference = document.createElement("a");
-      oandaReference.className = "event-reference-link";
-      oandaReference.href = "https://www.oanda.jp/lab-education/calendar/";
-      oandaReference.target = "_blank";
-      oandaReference.rel = "noopener noreferrer";
-      oandaReference.textContent = "前回（修正値）・予想・結果（OANDA）";
-      article.append(oandaReference);
-      const values = document.createElement("div");
-      values.className = "event-values";
-      [["前回", event.prior ?? event.previous ?? event.previous_value], ["市場予想", event.consensus ?? event.forecast ?? event.estimate], ["実績", event.actual ?? event.actual_value]].forEach(([label, value]) => {
-        const box = document.createElement("div");
-        box.className = "event-value";
-        const caption = document.createElement("span");
-        caption.textContent = label;
-        const result = document.createElement("strong");
-        result.textContent = displayValue(value);
-        box.append(caption, result);
-        values.append(box);
-      });
-
-      article.append(values);
-      return article;
-    }
-
-    function kissFxDailyUrl(value) {
-      if (!value) return "";
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return "";
-      const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit"
-      }).formatToParts(date);
-      const part = name => parts.find(item => item.type === name)?.value;
-      const ymd = `${part("year")}${part("month")}${part("day")}`;
-      return /^\d{8}$/.test(ymd) ? `https://kissfx.com/article/fxdays${ymd}.html` : "";
-    }
-
-    function safeFinanceCalendarUrl(value) {
-      if (typeof value !== "string") return "";
-      try {
-        const url = new URL(value);
-        return ["financecalendar.com", "www.financecalendar.com"].includes(url.hostname) && url.protocol === "https:" ? url.href : "";
-      } catch {
-        return "";
-      }
-    }
-
-    async function loadCalendar() {
-      const start = new Date();
-      const end = new Date(start);
-      end.setDate(end.getDate() + 14);
-      const endpoint = new URL("https://www.financecalendar.com/wp-json/fc/v1/calendar");
-      endpoint.search = new URLSearchParams({
-        from: localDateString(start),
-        to: localDateString(end),
-        limit: "500"
-      });
-
-      try {
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
-        const events = Array.isArray(payload) ? payload : (payload.events || payload.data?.events || payload.data || []);
-        calendarStatus.textContent = `更新 ${updatedAtText()}`;
-        calendarEvents = Array.isArray(events)
-          ? events.filter(event => isFxRelevantEvent(event) && ["us", "japan"].includes(eventRegion(event)))
-          : [];
-        renderCalendarEvents();
-      } catch (error) {
-        calendarEvents = [];
-        calendarFeed.replaceChildren();
-        const message = document.createElement("div");
-        message.className = "empty";
-        message.textContent = "経済イベントを読み込めませんでした。時間をおいて再読み込みしてください。";
-        calendarFeed.append(message);
-        calendarStatus.textContent = "取得できません";
-      }
-    }
-
-    loadNews();
-    loadCalendar();
-    window.setInterval(loadNews, 60_000);
-    window.setInterval(loadCalendar, 5 * 60_000);
-  </script>
+  <script src="assets/app.js" defer></script>
 </body>
 </html>

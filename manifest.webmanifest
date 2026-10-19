@@ -1,0 +1,22 @@
+{
+  "name": "FX速報 AI",
+  "short_name": "FX速報",
+  "description": "ドル円の速報ニュース、要人発言、経済指標、チャートをまとめて確認できる個人向けダッシュボード",
+  "lang": "ja",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EEF2F7",
+  "theme_color": "#2346C9",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "速報ニュース", "url": "./#/news", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "経済指標", "url": "./#/calendar", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "チャート", "url": "./#/chart", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
