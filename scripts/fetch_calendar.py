@@ -291,7 +291,7 @@ def fetch_x_list() -> list[dict]:
         html = response.read().decode("utf-8", "replace")
     match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', html, re.S)
     if not match:
-        raise ValueError("timeline data not found")
+        raise ValueError(f"timeline data not found (len={len(html)}) {html[:160]!r}")
     data = json.loads(match.group(1))
     entries = data.get("props", {}).get("pageProps", {}).get("timeline", {}).get("entries", [])
     posts = []
@@ -443,7 +443,10 @@ def main() -> int:
                     last_x_json = posts_json
                     print(f"x: {len(posts)} posts written", flush=True)
             except Exception as error:  # noqa: BLE001 - Xが取れなくても指標の取得は続ける
-                print(f"x list fetch failed ({type(error).__name__})", file=sys.stderr, flush=True)
+                detail = f"{type(error).__name__}: {getattr(error, 'code', '')} {str(error)[:200]}"
+                print(f"x list fetch failed ({detail})", file=sys.stderr, flush=True)
+                (DATA_DIR / "x_status.json").write_text(json.dumps({"checked_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "error": detail}, ensure_ascii=False))
+                publish("Xリストの取得状況")
 
         events = None
         try:
