@@ -585,12 +585,16 @@ function speakerProfile(item) {
   if (item.isEvent) return null;
   const text = [item.title, item.original_text, item.japanese_text, item.summary].filter(Boolean).join(" ");
   const source = item.source || "";
-  const curated = source.startsWith("要人発言") || ["FRB要人発言", "RBA要人発言", "日本銀行", "財務省", "RBA"].includes(source);
-  const macro = /(為替|ドル円|円安|円高|円相場|豪ドル|介入|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|国債|通貨|景気|currency|foreign exchange|dollar|yen|interest rate|cash rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds|outlook)/i.test(text);
+  const officialSpeech = ["FRB要人発言", "RBA要人発言"].includes(source);
+  const curated = officialSpeech || source.startsWith("要人発言");
+  const macro = /(為替|外為|ドル円|円安|円高|円相場|豪ドル|介入|財政|減税|補正予算|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|国債|通貨|景気|currency|foreign exchange|dollar|yen|interest rate|cash rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds|outlook)/i.test(text);
   const speech = /(発言|講演|会見|談話|挨拶|声明|証言|述べ|語っ|語る|示唆|強調|けん制|牽制|言及|表明|指摘|インタビュー|記者団|コメント|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|interview)/i.test(text);
-  if (!macro && !curated) return null;
+  if (!macro && !officialSpeech) return null;
+  // 他国の要人（韓国・ロシアなど）の記事を除く
+  const foreign = /(韓国|中国|ロシア|プーチン|ウクライナ|欧州|ECB|英国|ドイツ|フランス|インド|台湾|アルバニア|カナダ|ニュージーランド|スイス)/.test(text);
   const profiles = [
     // 豪州
+    { match: /豪中銀総裁補|RBA Assistant Governor|Assistant Governor/i, name: "RBA総裁補", region: "au" },
     { match: /ブロック総裁|Bullock|豪中銀総裁|RBA Governor/i, name: "ブロック RBA総裁", region: "au" },
     { match: /ハウザー|Hauser/i, name: "ハウザー RBA副総裁", region: "au" },
     { match: /チャーマーズ|Chalmers|豪財務相|Australian Treasurer/i, name: "チャーマーズ豪財務相", region: "au" },
@@ -609,20 +613,20 @@ function speakerProfile(item) {
     { match: /ウィリアムズ|John C?\.? ?Williams/i, name: "ウィリアムズ NY連銀総裁", region: "fed" },
     { match: /連銀総裁|FRB理事|Fed (President|Governor)|Federal Reserve Bank of/i, name: "FRB理事・地区連銀総裁", region: "fed" },
     // 日本
-    { match: /高市|Takaichi|(?<![豪米英])首相|総理|Japan(ese)? Prime Minister/i, name: "日本の首相", region: "japan" },
-    { match: /片山|Katayama|財務大臣|(?<![豪米英])財務相|Japan(ese)? Finance Minister/i, name: "財務大臣", region: "japan" },
-    { match: /三村|Mimura|財務官|Vice[- ]Minister of Finance for International Affairs|top currency diplomat/i, name: "財務官", region: "japan" },
+    { match: /高市|Takaichi|Japan(ese)? Prime Minister/i, name: "高市首相", region: "japan" },
+    { match: /片山|Katayama|Japan(ese)? Finance Minister/i, name: "片山財務大臣", region: "japan" },
+    { match: /三村|Mimura|財務官|Vice[- ]Minister of Finance for International Affairs|top currency diplomat/i, name: "三村財務官", region: "japan" },
     { match: /官房長官|Chief Cabinet Secretary/i, name: "官房長官", region: "japan" },
     { match: /植田|Ueda|日銀総裁|BOJ Governor|Bank of Japan Governor/i, name: "植田 日銀総裁", region: "japan" },
     { match: /日銀副総裁|氷見野|Himino|内田副総裁|Uchida/i, name: "日銀副総裁", region: "japan" },
     { match: /日銀審議委員|BOJ board member/i, name: "日銀審議委員", region: "japan" }
   ];
   const person = profiles.find(profile => profile.match.test(text));
+  if (person && foreign && !/高市|片山|三村|植田|ウォーシュ|ブロック|Bullock|Warsh|Ueda/.test(text)) return null;
   if (person) return speech || curated ? person : null;
   if (source === "FRB要人発言") return { name: "FRB理事・地区連銀総裁", region: "fed" };
   if (source === "RBA要人発言") return { name: "RBA要人", region: "au" };
-  if (source === "日本銀行" && speech) return { name: "日銀要人", region: "japan" };
-  if (source === "財務省" && speech) return { name: "財務省要人", region: "japan" };
+  if (source === "日本銀行" && speech && macro) return { name: "日銀要人", region: "japan" };
   return null;
 }
 

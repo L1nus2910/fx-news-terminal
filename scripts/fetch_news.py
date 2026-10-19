@@ -55,6 +55,12 @@ FEEDS = (
     *((name, google_news(query), True) for name, query in SPEAKER_QUERIES),
 )
 GOOGLE_NEWS_SOURCES = {"ブルームバーグ日本語", *(name for name, _ in SPEAKER_QUERIES)}
+SPEAKER_NAMES = re.compile(
+    r"高市|片山|三村|財務官|官房長官|植田|日銀総裁|日銀副総裁|氷見野|内田|審議委員|トランプ|ベッセント|ウォーシュ|パウエル|FRB議長|FRB理事|"
+    r"連銀総裁|ブロック|ハウザー|豪中銀|RBA|チャーマーズ|アルバニージー"
+)
+FOREIGN = re.compile(r"韓国|中国|ロシア|プーチン|欧州|ECB|英国|ドイツ|インド|台湾|アルバニア")
+SKIP_TITLES = re.compile(r"外国為替市況|為替相場概況|今日の為替|株式市況")
 MAX_ITEMS_PER_FEED = 20
 
 
@@ -115,6 +121,8 @@ def classify_release(source: str, title: str, description: str) -> tuple[int, st
         return 5, "方向は記事の文脈次第", "金融政策・為替"
     if any(term in text for term in high_impact_terms):
         return 5, "方向は内容次第", "金融政策・為替"
+    if source.startswith("要人発言") and (not SPEAKER_NAMES.search(title) or (FOREIGN.search(title) and not re.search(r"高市|片山|三村|植田|ウォーシュ|ブロック", title))):
+        return 2, "方向は内容次第", "報道"
     if source.startswith("要人発言") or source in {"FRB要人発言", "RBA要人発言"}:
         if any(term in text for term in ("為替", "円安", "円高", "介入", "急速な", "投機", "過度な変動", "currency", "exchange rate")):
             return 5, "方向は内容次第（為替発言）", "要人発言"
@@ -197,6 +205,8 @@ def fetch_feed(name: str, url: str, japanese: bool) -> list[dict]:
         title = clean_text(child_text(element, "title"))
         link = item_link(element)
         if not title or not link.startswith("https://"):
+            continue
+        if SKIP_TITLES.search(title):
             continue
         description = clean_text(child_text(element, "description", "summary", "encoded", "content"))
         # Google News RSS is only a discovery layer here; store Bloomberg's
