@@ -1,12 +1,10 @@
 /* FX速報 AI — service worker
    アプリの骨組みだけをキャッシュして、オフラインでも画面が開くようにする。
    ニュースやレートなど外部のデータはキャッシュしない（常に最新を取得）。 */
-const VERSION = "fx-shell-v4";
+const VERSION = "fx-shell-v5";
 const SHELL = [
   "./",
   "./index.html",
-  "./assets/app.css",
-  "./assets/app.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -32,8 +30,9 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin) return; // 外部データは素通し
 
   // 自サイトのファイル：ネット優先、オフライン時はキャッシュ
+  // ブラウザのHTTPキャッシュを使わず、毎回サーバーに最新を確認する
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: "no-cache" })
       .then(response => {
         if (response.ok) {
           const copy = response.clone();
