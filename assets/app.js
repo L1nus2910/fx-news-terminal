@@ -341,6 +341,7 @@ function sourceLabel(source) {
   if (source === "RBA要人発言") return "RBA";
   if (source === "ブルームバーグ日本語") return "ブルームバーグ";
   if (String(source || "").startsWith("要人発言")) return "要人報道";
+  if (String(source || "").startsWith("X（")) return "X";
   return source || "情報源不明";
 }
 function newsDate(item) {
@@ -563,7 +564,7 @@ async function loadNews() {
 
 /* ニュースと重要指標（予定・結果）を1本の流れにまとめる */
 function mergeNews() {
-  newsItems = [...eventNewsItems(), ...rawNews]
+  newsItems = [...eventNewsItems(), ...xNewsItems(), ...rawNews]
     .sort((a, b) => (newsDate(b)?.getTime() || 0) - (newsDate(a)?.getTime() || 0));
   const options = [...new Set(newsItems.map(item => sourceLabel(item.source)))].filter(l => l !== "情報源不明");
   const previous = newsSourceFilter.value;
@@ -586,12 +587,12 @@ function speakerProfile(item) {
   const text = [item.title, item.original_text, item.japanese_text, item.summary].filter(Boolean).join(" ");
   const source = item.source || "";
   const officialSpeech = ["FRB要人発言", "RBA要人発言"].includes(source);
-  const curated = officialSpeech || source.startsWith("要人発言");
-  const macro = /(為替|外為|ドル円|円安|円高|円相場|豪ドル|介入|財政|減税|補正予算|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|国債|通貨|景気|currency|foreign exchange|dollar|yen|interest rate|cash rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds|outlook)/i.test(text);
-  const speech = /(発言|講演|会見|談話|挨拶|声明|証言|述べ|語っ|語る|示唆|強調|けん制|牽制|言及|表明|指摘|インタビュー|記者団|コメント|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|interview)/i.test(text);
+  const curated = officialSpeech || source.startsWith("要人発言") || Boolean(item.isX);
+  const macro = /(為替|外為|ドル円|円安|円高|円相場|豪ドル|介入|財政|減税|補正予算|金融政策|政策金利|利上げ|利下げ|金利|物価|インフレ|雇用|経済|関税|貿易|国債|通貨|景気|currency|foreign exchange|\bFX\b|forex|dollar|yen|interest rate|rate cut|rate hike|yields?|bonds?|cash rate|monetary policy|inflation|employment|economy|tariff|trade|treasury yield|federal funds|outlook)/i.test(text);
+  const speech = Boolean(item.isX) || /(発言|講演|会見|談話|挨拶|声明|証言|述べ|語っ|語る|示唆|強調|けん制|牽制|言及|表明|指摘|インタビュー|記者団|コメント|speech|remarks|testimony|testifies|press conference|statement|says|said|warns|interview)/i.test(text);
   if (!macro && !officialSpeech) return null;
   // 他国の要人（韓国・ロシアなど）の記事を除く
-  const foreign = /(韓国|中国|ロシア|プーチン|ウクライナ|欧州|ECB|英国|ドイツ|フランス|インド|台湾|アルバニア|カナダ|ニュージーランド|スイス)/.test(text);
+  const foreign = /(韓国|中国|ロシア|プーチン|ウクライナ|欧州|ECB|英国|ドイツ|フランス|インド|台湾|アルバニア|カナダ|ニュージーランド|スイス|Israel|Netanyahu|Ukraine|Russia|China|Korea|ECB|BoE|Canada)/i.test(text);
   const profiles = [
     // 豪州
     { match: /豪中銀総裁補|RBA Assistant Governor|Assistant Governor/i, name: "RBA総裁補", region: "au" },
@@ -1013,10 +1014,106 @@ $("#notify-btn")?.addEventListener("click", async () => {
 renderNotifySetting();
 
 /* =========================================================
-   X投稿（公式リストの埋め込み）
+   X投稿：GitHub Actions が公開リストの最新投稿を取得（x_list.json）。
+   取れないときは X 公式の埋め込みを使う。
    ========================================================= */
-function showX() {
-  if (!widgets.xShown) widgets.x();
+let xPosts = [];
+let xUpdatedAt = null;
+let xTimer;
+const X_URLS = [
+  { url: "https://api.github.com/repos/L1nus2910/fx-news-terminal/contents/x_list.json?ref=data", headers: { Accept: "application/vnd.github.raw+json" } },
+  { url: "https://raw.githubusercontent.com/L1nus2910/fx-news-terminal/data/x_list.json", headers: {} }
+];
+// ドル円・豪ドルに関係しそうな投稿
+const X_KEYWORDS = /(USD\/?JPY|AUD\/?(JPY|USD)|\byen\b|\bJPY\b|\bAUD\b|Aussie|\bBOJ\b|BoJ|Ueda|Japan|Katayama|Mimura|Takaichi|\bRBA\b|Bullock|Hauser|Australia|Chalmers|\bFed\b|FOMC|Warsh|Powell|Waller|Jefferson|Bowman|Williams|Treasury|Bessent|Trump|tariff|intervention|ドル円|円安|円高|豪ドル|日銀|介入|雇用統計|CPI|NFP|payrolls)/i;
+
+async function loadXPosts() {
+  for (const source of X_URLS) {
+    try {
+      const response = await fetch(source.url, { headers: source.headers, cache: "no-store" });
+      if (!response.ok) continue;
+      const data = await response.json();
+      if (!Array.isArray(data.posts)) continue;
+      const updated = new Date(data.updated_at);
+      if (Number.isNaN(updated.getTime()) || Date.now() - updated.getTime() > 24 * 3600e3) continue;
+      xPosts = data.posts;
+      xUpdatedAt = updated;
+      mergeNews();
+      if (currentScreen === "x") renderXPosts();
+      return true;
+    } catch { /* 次へ */ }
+  }
+  return false;
+}
+
+function linkify(text) {
+  const frag = document.createDocumentFragment();
+  const re = /https:\/\/[^\s]+/g;
+  let last = 0; let m;
+  while ((m = re.exec(text))) {
+    frag.append(text.slice(last, m.index));
+    let label = m[0].replace(/^https:\/\/(www\.)?/, "");
+    if (label.length > 32) label = label.slice(0, 31) + "…";
+    frag.append(el("a", { href: m[0], target: "_blank", rel: "noopener noreferrer", text: label }));
+    last = m.index + m[0].length;
+  }
+  frag.append(text.slice(last));
+  return frag;
+}
+
+function renderXPosts() {
+  const host = $("#x-timeline");
+  host.classList.remove("x-card");
+  host.classList.add("list-card");
+  const onlyFx = segValue($("#x-filter")) === "fx";
+  const list = xPosts.filter(p => !onlyFx || X_KEYWORDS.test(p.text));
+  $("#x-status").textContent = `${list.length}件・${xUpdatedAt ? fmtTime.format(xUpdatedAt) + "時点" : ""}（約2分ごとに更新）`;
+  if (!list.length) {
+    host.replaceChildren(el("div", { class: "empty" }, el("strong", { text: "該当する投稿はありません" }), "「すべて」にすると全件を表示します。"));
+    return;
+  }
+  host.replaceChildren(...list.map(post => {
+    const d = post.created_at ? new Date(post.created_at) : null;
+    const fx = X_KEYWORDS.test(post.text);
+    return el("article", { class: `xpost${fx ? " fx" : ""}` },
+      post.avatar ? el("img", { class: "xavatar", src: safeUrl(post.avatar), alt: "", loading: "lazy", width: 40, height: 40 }) : el("span", { class: "xavatar" }),
+      el("div", { class: "xbody" },
+        el("div", { class: "xhead" },
+          el("strong", { text: post.name || "" }),
+          el("span", { class: "xhandle", text: `@${post.handle || ""}` }),
+          el("a", { class: "xtime", href: safeUrl(post.url), target: "_blank", rel: "noopener noreferrer", text: d ? relTime(d) : "" })),
+        post.retweeted_by ? el("div", { class: "xrt", text: `${post.retweeted_by} がリポスト` }) : null,
+        el("p", { class: "xtext" }, linkify(post.text || "")),
+        post.image ? el("a", { href: safeUrl(post.url), target: "_blank", rel: "noopener noreferrer" }, el("img", { class: "ximage", src: safeUrl(post.image), alt: "", loading: "lazy" })) : null,
+        fx ? el("div", { class: "chips" }, el("span", { class: "chip speaker", text: "ドル円・豪ドル関連" })) : null));
+  }));
+}
+
+async function showX() {
+  clearInterval(xTimer);
+  const ok = xPosts.length ? true : await loadXPosts();
+  if (ok) {
+    renderXPosts();
+    xTimer = setInterval(() => { if (currentScreen === "x") loadXPosts(); else clearInterval(xTimer); }, 120e3);
+  } else if (!widgets.xShown) {
+    $("#x-status").textContent = "X公式の埋め込みで表示しています";
+    widgets.x();
+  }
+}
+segmented($("#x-filter"), () => renderXPosts());
+
+/* X の関連投稿をニュースの流れに入れる（直近24時間・最大20件） */
+function xNewsItems() {
+  const since = Date.now() - 24 * 3600e3;
+  return xPosts.filter(p => p.created_at && new Date(p.created_at).getTime() > since && X_KEYWORDS.test(p.text)).slice(0, 20).map(p => ({
+    isX: true,
+    source: `X（${p.name || p.handle}）`,
+    title: p.text.replace(/https:\/\/\S+/g, "").trim() || p.text,
+    url: p.url,
+    published_at: p.created_at,
+    importance: 3,
+    category: "X投稿"
+  }));
 }
 
 /* =========================================================
@@ -1104,6 +1201,8 @@ widgets.ticker();
 route();
 loadNews();
 loadCalendar();
+loadXPosts();
+setInterval(loadXPosts, 5 * 60e3);
 setInterval(loadNews, 60_000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") loadNews();

@@ -237,11 +237,19 @@
       <section class="screen" data-screen="x" aria-label="X投稿" hidden>
         <div class="screen-head">
           <h1>X投稿</h1>
-          <p>公開リスト「FX速報」の投稿</p>
+          <p id="x-status">公開リスト「FX速報」の投稿を読み込んでいます</p>
         </div>
-        <p class="lead">Xの公式タイムラインを埋め込んで表示します。表示されない場合は、Xにログインしていないかブラウザが埋め込みを止めています。</p>
-        <a class="wide-btn" href="https://x.com/i/lists/2104983692594839644" target="_blank" rel="noopener noreferrer"><svg><use href="#i-ext"/></svg>Xアプリでリストを開く</a>
-        <div class="widget-card x-card" id="x-timeline"></div>
+        <div class="filters">
+          <div class="seg-row">
+            <div class="seg" role="radiogroup" aria-label="表示する投稿" id="x-filter">
+              <button type="button" role="radio" data-value="all" aria-checked="true">すべて</button>
+              <button type="button" role="radio" data-value="fx" aria-checked="false">ドル円・豪ドル関連</button>
+            </div>
+            <a class="ghost-btn" href="https://x.com/i/lists/2104983692594839644" target="_blank" rel="noopener noreferrer"><svg><use href="#i-ext"/></svg>Xで開く</a>
+          </div>
+        </div>
+        <div class="widget-card x-card" id="x-timeline"><div class="empty">読み込んでいます…</div></div>
+        <p class="credit">リストの投稿を約2分ごとに自動で取り込んでいます。ドル円・豪ドルに関係しそうな投稿は、ニュースと要人発言の欄にも流れます。</p>
       </section>
 
       <!-- 保存した記事 -->

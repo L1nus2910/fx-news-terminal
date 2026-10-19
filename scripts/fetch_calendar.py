@@ -20,6 +20,8 @@ import urllib.request
 from pathlib import Path
 
 TV_URL = "https://economic-calendar.tradingview.com/events"
+X_LIST_ID = os.environ.get("X_LIST_ID", "2104983692594839644")
+X_INTERVAL = 120        # Xリストの取得間隔（秒）
 COUNTRIES = ("US", "JP", "AU")
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data-out"))
 RUN_SECONDS = int(os.environ.get("RUN_SECONDS", "0"))  # 0 = 1回だけ
@@ -277,6 +279,63 @@ def mark_primary(events: list[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# X の公開リスト（埋め込み用の公開データから最新投稿を取得）
+# ---------------------------------------------------------------------------
+def fetch_x_list() -> list[dict]:
+    url = f"https://syndication.twitter.com/srv/timeline-list/list-id/{X_LIST_ID}?dnt=true&lang=ja"
+    request = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36",
+        "Accept-Language": "ja,en;q=0.8",
+    })
+    with urllib.request.urlopen(request, timeout=25) as response:
+        html = response.read().decode("utf-8", "replace")
+    match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', html, re.S)
+    if not match:
+        raise ValueError("timeline data not found")
+    data = json.loads(match.group(1))
+    entries = data.get("props", {}).get("pageProps", {}).get("timeline", {}).get("entries", [])
+    posts = []
+    for entry in entries:
+        tweet = (entry.get("content") or {}).get("tweet") or {}
+        if not tweet.get("id_str"):
+            continue
+        retweet = tweet.get("retweeted_status")
+        body = retweet or tweet
+        text = body.get("full_text") or body.get("text") or ""
+        for link in (body.get("entities") or {}).get("urls", []):
+            if link.get("url") and link.get("expanded_url"):
+                text = text.replace(link["url"], link["expanded_url"])
+        media = ((body.get("extended_entities") or body.get("entities") or {}).get("media") or [])
+        for item in media:
+            if item.get("url"):
+                text = text.replace(item["url"], "").strip()
+        user = tweet.get("user") or {}
+        original = body.get("user") or {}
+        created = body.get("created_at") or tweet.get("created_at")
+        try:
+            created_iso = dt.datetime.strptime(created, "%a %b %d %H:%M:%S %z %Y").astimezone(dt.timezone.utc).isoformat()
+        except (TypeError, ValueError):
+            created_iso = None
+        posts.append({
+            "id": tweet["id_str"],
+            "text": html_unescape(text),
+            "name": original.get("name") or user.get("name"),
+            "handle": original.get("screen_name") or user.get("screen_name"),
+            "avatar": original.get("profile_image_url_https"),
+            "retweeted_by": user.get("name") if retweet else None,
+            "created_at": created_iso,
+            "image": next((m.get("media_url_https") for m in media if m.get("type") == "photo"), None),
+            "url": f"https://x.com/{original.get('screen_name') or user.get('screen_name')}/status/{body.get('id_str') or tweet['id_str']}",
+        })
+    return posts[:80]
+
+
+def html_unescape(text: str) -> str:
+    import html as _html
+    return _html.unescape(text)
+
+
+# ---------------------------------------------------------------------------
 # Telegram 通知（任意）
 # ---------------------------------------------------------------------------
 def jst(iso: str) -> str:
@@ -367,9 +426,25 @@ def main() -> int:
         except ValueError:
             pass
 
+    x_path = DATA_DIR / "x_list.json"
+    last_x_fetch, last_x_json = 0.0, None
+
     started = time.monotonic()
     failures = 0
     while True:
+        if time.monotonic() - last_x_fetch >= X_INTERVAL:
+            last_x_fetch = time.monotonic()
+            try:
+                posts = fetch_x_list()
+                posts_json = json.dumps(posts, sort_keys=True)
+                if posts and posts_json != last_x_json:
+                    x_path.write_text(json.dumps({"updated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "list_id": X_LIST_ID, "posts": posts}, ensure_ascii=False, indent=1))
+                    publish("Xリストを更新")
+                    last_x_json = posts_json
+                    print(f"x: {len(posts)} posts written", flush=True)
+            except Exception as error:  # noqa: BLE001 - Xが取れなくても指標の取得は続ける
+                print(f"x list fetch failed ({type(error).__name__})", file=sys.stderr, flush=True)
+
         events = None
         try:
             events = fetch_tradingview()
@@ -393,7 +468,7 @@ def main() -> int:
                 publish("経済指標を更新")
                 last_events_json, last_write = events_json, time.monotonic()
                 print(f"{len(events)} events written (changed={changed})", flush=True)
-            wait = interval_for(events)
+            wait = min(interval_for(events), X_INTERVAL)
         else:
             wait = SLOW_INTERVAL if failures < 3 else SLOW_INTERVAL * 2
 

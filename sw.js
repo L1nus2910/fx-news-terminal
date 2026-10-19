@@ -1,7 +1,7 @@
 /* FX速報 AI — service worker
    アプリの骨組みだけをキャッシュして、オフラインでも画面が開くようにする。
    ニュースやレートなど外部のデータはキャッシュしない（常に最新を取得）。 */
-const VERSION = "fx-shell-v3";
+const VERSION = "fx-shell-v4";
 const SHELL = [
   "./",
   "./index.html",
