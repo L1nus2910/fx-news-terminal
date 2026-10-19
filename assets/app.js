@@ -1066,7 +1066,7 @@ function renderXPosts() {
   host.classList.remove("x-card");
   host.classList.add("list-card");
   const onlyFx = segValue($("#x-filter")) === "fx";
-  const list = xPosts.filter(p => !onlyFx || X_KEYWORDS.test(p.text));
+  const list = xPosts.filter(p => !onlyFx || isFxPost(p));
   $("#x-status").textContent = `${list.length}件・${xUpdatedAt ? fmtTime.format(xUpdatedAt) + "時点" : ""}（約2分ごとに更新）`;
   if (!list.length) {
     host.replaceChildren(el("div", { class: "empty" }, el("strong", { text: "該当する投稿はありません" }), "「すべて」にすると全件を表示します。"));
@@ -1074,7 +1074,8 @@ function renderXPosts() {
   }
   host.replaceChildren(...list.map(post => {
     const d = post.created_at ? new Date(post.created_at) : null;
-    const fx = X_KEYWORDS.test(post.text);
+    const fx = isFxPost(post);
+    const ja = post.text_ja && post.text_ja !== post.text ? post.text_ja : null;
     return el("article", { class: `xpost${fx ? " fx" : ""}` },
       post.avatar ? el("img", { class: "xavatar", src: safeUrl(post.avatar), alt: "", loading: "lazy", width: 40, height: 40 }) : el("span", { class: "xavatar" }),
       el("div", { class: "xbody" },
@@ -1083,7 +1084,8 @@ function renderXPosts() {
           el("span", { class: "xhandle", text: `@${post.handle || ""}` }),
           el("a", { class: "xtime", href: safeUrl(post.url), target: "_blank", rel: "noopener noreferrer", text: d ? relTime(d) : "" })),
         post.retweeted_by ? el("div", { class: "xrt", text: `${post.retweeted_by} がリポスト` }) : null,
-        el("p", { class: "xtext" }, linkify(post.text || "")),
+        el("p", { class: "xtext" }, linkify(ja || post.text || "")),
+        ja ? el("details", { class: "xorig" }, el("summary", { text: "原文" }), el("p", {}, linkify(post.text || ""))) : null,
         post.image ? el("a", { href: safeUrl(post.url), target: "_blank", rel: "noopener noreferrer" }, el("img", { class: "ximage", src: safeUrl(post.image), alt: "", loading: "lazy" })) : null,
         fx ? el("div", { class: "chips" }, el("span", { class: "chip speaker", text: "ドル円・豪ドル関連" })) : null));
   }));
@@ -1102,13 +1104,18 @@ async function showX() {
 }
 segmented($("#x-filter"), () => renderXPosts());
 
+function isFxPost(post) {
+  return X_KEYWORDS.test(post.text || "") || X_KEYWORDS.test(post.text_ja || "");
+}
+
 /* X の関連投稿をニュースの流れに入れる（直近24時間・最大20件） */
 function xNewsItems() {
   const since = Date.now() - 24 * 3600e3;
-  return xPosts.filter(p => p.created_at && new Date(p.created_at).getTime() > since && X_KEYWORDS.test(p.text)).slice(0, 20).map(p => ({
+  return xPosts.filter(p => p.created_at && new Date(p.created_at).getTime() > since && isFxPost(p)).slice(0, 20).map(p => ({
     isX: true,
     source: `X（${p.name || p.handle}）`,
-    title: p.text.replace(/https:\/\/\S+/g, "").trim() || p.text,
+    title: (p.text_ja || p.text).replace(/https:\/\/\S+/g, "").trim() || p.text,
+    original_text: p.text_ja ? p.text.replace(/https:\/\/\S+/g, "").trim() : null,
     url: p.url,
     published_at: p.created_at,
     importance: 3,

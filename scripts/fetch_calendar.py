@@ -330,6 +330,49 @@ def fetch_x_list() -> list[dict]:
     return posts[:80]
 
 
+# ---------------------------------------------------------------------------
+# 英語の投稿を日本語に翻訳（新しい投稿だけ。結果は x_list.json に保存して使い回す）
+# ---------------------------------------------------------------------------
+JA_FIXES = [
+    (r"(?<![A-Za-z])FX(?![A-Za-z])", "為替"), (r"(\d+)\s*BPS", r"\1bp"), (r"(\d+)\s*bps", r"\1bp"),
+    (r"日本銀行", "日銀"), (r"オーストラリア準備銀行|豪準備銀行", "豪中銀"), (r"カナダ銀行", "カナダ中銀"),
+    (r"イングランド銀行", "英中銀"), (r"欧州中央銀行", "ECB"), (r"連邦準備制度理事会|連邦準備制度", "FRB"),
+    (r"日本の片山氏|片山氏", "片山財務相"), (r"日本の三村氏|三村氏", "三村財務官"), (r"日本の植田氏|植田氏", "植田日銀総裁"),
+    (r"(豪中銀の|RBAの)?ブロック氏", "ブロック豪中銀総裁"), (r"(FRBの)?ウォーシュ氏", "ウォーシュFRB議長"),
+    (r"ベッセント氏", "ベッセント米財務長官"), (r"日本の高市氏|高市氏", "高市首相"),
+]
+JAPANESE = re.compile(r"[\u3040-\u30ff\u4e00-\u9fff]")
+
+
+def translate_ja(text: str) -> str | None:
+    if not text or JAPANESE.search(text[:40]):
+        return None
+    url = "https://translate.googleapis.com/translate_a/single?" + urllib.parse.urlencode(
+        {"client": "gtx", "sl": "auto", "tl": "ja", "dt": "t", "q": text[:1500]})
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        data = json.loads(response.read())
+    ja = "".join(part[0] for part in data[0] if part and part[0])
+    for pattern, repl in JA_FIXES:
+        ja = re.sub(pattern, repl, ja)
+    return ja.strip() or None
+
+
+def add_translations(posts: list[dict], previous: dict[str, str], budget: int = 60) -> None:
+    for post in posts:
+        if post["id"] in previous:
+            post["text_ja"] = previous[post["id"]]
+            continue
+        if budget <= 0:
+            continue
+        try:
+            post["text_ja"] = translate_ja(post["text"])
+        except Exception:  # noqa: BLE001 - 翻訳できなければ原文のまま
+            post["text_ja"] = None
+        budget -= 1
+        time.sleep(0.3)
+
+
 def html_unescape(text: str) -> str:
     import html as _html
     return _html.unescape(text)
@@ -428,6 +471,12 @@ def main() -> int:
 
     x_path = DATA_DIR / "x_list.json"
     last_x_fetch, last_x_json = 0.0, None
+    translations: dict[str, str] = {}
+    if x_path.exists():
+        try:
+            translations = {p["id"]: p["text_ja"] for p in json.loads(x_path.read_text()).get("posts", []) if p.get("text_ja")}
+        except ValueError:
+            pass
 
     started = time.monotonic()
     failures = 0
@@ -436,6 +485,8 @@ def main() -> int:
             last_x_fetch = time.monotonic()
             try:
                 posts = fetch_x_list()
+                add_translations(posts, translations)
+                translations = {p["id"]: p["text_ja"] for p in posts if p.get("text_ja")}
                 posts_json = json.dumps(posts, sort_keys=True)
                 if posts and posts_json != last_x_json:
                     x_path.write_text(json.dumps({"updated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "list_id": X_LIST_ID, "posts": posts}, ensure_ascii=False, indent=1))

@@ -607,6 +607,11 @@ svg { width: 1em; height: 1em; flex: none; }
 .xtime { margin-left: auto; color: var(--ink-3); font-size: 12.5px; }
 .xrt { font-size: 12px; color: var(--ink-3); }
 .xtext { margin: 4px 0 0; font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.xorig { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
+.xorig summary { cursor: pointer; width: max-content; font-weight: 700; font-size: 12px; color: var(--ink-3); list-style: none; padding: 2px 8px; border-radius: 999px; background: var(--surface-3); }
+.xorig summary::-webkit-details-marker { display: none; }
+.xorig[open] summary { color: var(--accent); }
+.xorig p { margin: 6px 0 0; line-height: 1.55; overflow-wrap: anywhere; }
 .ximage { display: block; margin-top: 8px; max-width: 100%; max-height: 360px; border-radius: var(--r-md); border: 1px solid var(--line); }
 
 /* ---------- buttons ---------- */
