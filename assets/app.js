@@ -161,8 +161,24 @@ const widgets = {
       .catch(() => host.replaceChildren(el("a", { href: "https://www.tradingview.com/symbols/USDJPY/", target: "_blank", rel: "noopener noreferrer", class: "block-link rate-fallback", text: "レートを読み込めません。TradingViewで開く" })));
   },
 
+  oanda() {
+    // OANDA証券の「通貨の強弱チャート」ウィジェット（公式の埋め込み用スクリプト）
+    if (this.oandaShown) return;
+    this.oandaShown = true;
+    const host = $("#oanda-cpb-host");
+    const marker = el("div", { "data-currency-power-balance": "" });
+    const script = document.createElement("script");
+    script.src = "https://widget.oanda.jp/currency-power-balance.js";
+    script.textContent = JSON.stringify({ width: "auto", height: "auto" });
+    script.onerror = () => host.replaceChildren(el("div", { class: "empty" },
+      el("strong", { text: "通貨強弱チャートを読み込めませんでした" }),
+      el("a", { class: "ghost-btn", href: "https://www.oanda.jp/lab-education/oanda_lab/oanda_rab/currency_power_balance/", target: "_blank", rel: "noopener noreferrer" }, icon("i-ext"), "OANDAで開く")));
+    host.replaceChildren(marker, script);
+  },
+
   market() {
     this.marketShown = true;
+    this.oanda();
     const host = $("#forex-table-host");
     $("#market-status").textContent = "読み込んでいます";
     loadScript("https://widgets.tradingview-widget.com/w/en/tv-forex-table.js", { module: true })
@@ -175,7 +191,7 @@ const widgets = {
         table.setAttribute("transparent", "");
         table.setAttribute("locale", "ja");
         host.replaceChildren(table);
-        $("#market-status").textContent = "前日比のヒートマップ";
+        $("#market-status").textContent = "主要8通貨の強弱の推移";
       })
       .catch(() => {
         host.replaceChildren(el("div", { class: "empty" },

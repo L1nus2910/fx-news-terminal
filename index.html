@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/app.css?v=202610200206">
+  <link rel="stylesheet" href="assets/app.css?v=202610200209">
 </head>
 <body>
   <!-- SVG アイコン定義 -->
@@ -120,7 +120,7 @@
                 <a class="tile" href="#/news" style="--tile:var(--hue-news)"><svg><use href="#t-news"/></svg><span>速報ニュース</span><small id="sub-news">公式・報道</small></a>
                 <a class="tile" href="#/speakers" style="--tile:var(--hue-speak)"><svg><use href="#t-speak"/></svg><span>要人発言</span><small id="sub-speak">日米豪の要人</small></a>
                 <a class="tile" href="#/calendar" style="--tile:var(--hue-cal)"><svg><use href="#t-cal"/></svg><span>経済指標</span><small id="sub-cal">日米豪</small></a>
-                <a class="tile" href="#/market" style="--tile:var(--hue-heat)"><svg><use href="#t-heat"/></svg><span>通貨強弱</span><small>前日比</small></a>
+                <a class="tile" href="#/market" style="--tile:var(--hue-heat)"><svg><use href="#t-heat"/></svg><span>通貨強弱</span><small>8通貨の推移</small></a>
                 <a class="tile" href="#/x" style="--tile:var(--hue-x)"><svg><use href="#t-x"/></svg><span>X投稿</span><small>公開リスト</small></a>
                 <a class="tile" href="#/chart" style="--tile:var(--hue-chart)"><svg><use href="#t-chart"/></svg><span>チャート</span><small>通貨ペア切替</small></a>
               </nav>
@@ -208,11 +208,14 @@
       <section class="screen" data-screen="market" aria-label="通貨強弱" hidden>
         <div class="screen-head">
           <h1>通貨強弱</h1>
-          <p id="market-status" aria-live="polite">前日比のヒートマップ</p>
+          <p id="market-status">主要8通貨の強弱の推移</p>
         </div>
-        <p class="lead">主要通貨ペアの前日比から、どの通貨が強いか・弱いかを一覧で見られます。将来の値動きを示すものではありません。</p>
+        <p class="lead">上にあるほど買われている（強い）通貨です。豪ドル（AUD）・米ドル（USD）・円（JPY）の線の位置と傾きで、どのペアが動きやすいかを見られます。右の国旗で通貨の表示を切り替えられます。</p>
+        <div class="widget-card oanda-card" id="oanda-cpb-host"><div class="empty">通貨強弱チャートを準備しています</div></div>
+        <p class="credit">通貨の強弱チャート：<a href="https://www.oanda.jp/lab-education/oanda_lab/oanda_rab/currency_power_balance/" target="_blank" rel="noopener noreferrer">OANDA証券</a></p>
+        <div class="block-head" style="margin-top:22px"><h2>前日比ヒートマップ</h2></div>
         <div class="widget-card" id="forex-table-host"><div class="empty">表示を準備しています</div></div>
-        <p class="credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView</a></p>
+        <p class="credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView</a>。将来の値動きを示すものではありません。</p>
       </section>
 
       <!-- チャート -->
@@ -315,6 +318,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/app.js?v=202610200206" defer></script>
+  <script src="assets/app.js?v=202610200209" defer></script>
 </body>
 </html>

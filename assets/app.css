@@ -585,6 +585,9 @@ svg { width: 1em; height: 1em; flex: none; }
   box-shadow: var(--shadow-card); overflow: hidden; min-height: 200px;
 }
 .widget-card tv-forex-table { display: block; width: 100%; min-height: 460px; }
+.oanda-card { background: #fff; padding: 8px 4px 4px; min-height: 360px; }
+.oanda-card iframe { display: block; width: 100% !important; max-width: 100% !important; }
+.oanda-card .empty { color: #4A5A6E; }
 .chart-card { height: min(70vh, 640px); min-height: 420px; padding: 0; }
 .chart-card .tradingview-widget-container { height: 100%; width: 100%; }
 .x-card { padding: 6px 10px; min-height: 520px; }
