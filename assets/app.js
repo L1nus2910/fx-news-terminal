@@ -544,7 +544,7 @@ async function loadNews() {
 /* ニュースと重要指標（予定・結果）を1本の流れにまとめる */
 function mergeNews() {
   // 市況の定型記事は要人発言ではないので除く（以前の判定で★5になった記事も含む）
-  const MARKET_REPORT = /外国為替市況|為替相場概況|今日の為替|株式市況/;
+  const MARKET_REPORT = /外国為替市況|為替相場概況|今日の為替|株式市況|^(東京|NY|ニューヨーク|欧州|ロンドン)(為替|外為|市場|株式)[:：]|為替見通し|為替予想/;
   newsItems = [...eventNewsItems(), ...xNewsItems(), ...rawNews.filter(item => !MARKET_REPORT.test(newsTitle(item)))]
     .sort((a, b) => (newsDate(b)?.getTime() || 0) - (newsDate(a)?.getTime() || 0));
   const options = [...new Set(newsItems.map(item => sourceLabel(item.source)))].filter(l => l !== "情報源不明");

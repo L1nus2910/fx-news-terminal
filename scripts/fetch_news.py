@@ -60,7 +60,7 @@ SPEAKER_NAMES = re.compile(
     r"連銀総裁|ブロック|ハウザー|豪中銀|RBA|チャーマーズ|アルバニージー"
 )
 FOREIGN = re.compile(r"韓国|中国|ロシア|プーチン|欧州|ECB|英国|ドイツ|インド|台湾|アルバニア")
-SKIP_TITLES = re.compile(r"外国為替市況|為替相場概況|今日の為替|株式市況")
+SKIP_TITLES = re.compile(r"外国為替市況|為替相場概況|今日の為替|株式市況|^(東京|NY|ニューヨーク|欧州|ロンドン)(為替|外為|市場|株式)[:：]|為替見通し|為替予想")
 MAX_ITEMS_PER_FEED = 20
 
 
