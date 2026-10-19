@@ -656,8 +656,8 @@ let calendarEvents = [];
 let calendarUpdatedAt = null;
 let calendarFromFallback = false;
 const CAL_URLS = [
-  { url: "https://api.github.com/repos/l1nus2910/fx-news-terminal/contents/calendar.json?ref=data", headers: { Accept: "application/vnd.github.raw+json" } },
-  { url: "https://raw.githubusercontent.com/l1nus2910/fx-news-terminal/data/calendar.json", headers: {} }
+  { url: "https://api.github.com/repos/L1nus2910/fx-news-terminal/contents/calendar.json?ref=data", headers: { Accept: "application/vnd.github.raw+json" } },
+  { url: "https://raw.githubusercontent.com/L1nus2910/fx-news-terminal/data/calendar.json", headers: {} }
 ];
 const COUNTRY = {
   US: { key: "us", name: "米国", pairs: "ドル円・豪ドル/米ドル" },
