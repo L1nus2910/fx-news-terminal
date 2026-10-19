@@ -1204,7 +1204,9 @@ const strength = {
     }
     const n = set.timestamps.length;
     const latest = Object.fromEntries(CUR_ORDER.map(c => [c, set.series[c][n - 1]]));
-    $("#market-status").textContent = `${fmtTime.format(new Date(set.timestamps[n - 1] * 1000))}時点・${segValue($("#strength-range")) === "week" ? "5日間" : "NY終値から"}`;
+    const startAt = new Date(set.timestamps[0] * 1000);
+    const startText = segValue($("#strength-range")) === "week" ? `${fmtMD.format(startAt)}から` : `${fmtTime.format(startAt)}起点`;
+    $("#market-status").textContent = `${fmtTime.format(new Date(set.timestamps[n - 1] * 1000))}時点・${startText}`;
     this.renderPairs(latest);
     this.renderLegend();
     this.renderChart(set);
