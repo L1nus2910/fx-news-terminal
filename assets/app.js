@@ -1025,7 +1025,7 @@ const X_URLS = [
   { url: "https://raw.githubusercontent.com/L1nus2910/fx-news-terminal/data/x_list.json", headers: {} }
 ];
 // ドル円・豪ドルに関係しそうな投稿
-const X_KEYWORDS = /(USD\/?JPY|AUD\/?(JPY|USD)|\byen\b|\bJPY\b|\bAUD\b|Aussie|\bBOJ\b|BoJ|Ueda|Japan|Katayama|Mimura|Takaichi|\bRBA\b|Bullock|Hauser|Australia|Chalmers|\bFed\b|FOMC|Warsh|Powell|Waller|Jefferson|Bowman|Williams|Treasury|Bessent|Trump|tariff|intervention|ドル円|円安|円高|豪ドル|日銀|介入|雇用統計|CPI|NFP|payrolls)/i;
+const X_KEYWORDS = /(USD\/?JPY|AUD\/?(JPY|USD)|\byen\b|\bJPY\b|\bAUD\b|Aussie|\bBOJ\b|BoJ|Ueda|Japan|Katayama|Mimura|Takaichi|\bRBA\b|Bullock|Hauser|Australia|Chalmers|\bFed\b|FOMC|Warsh|Powell|Waller|Jefferson|Bowman|Williams|Treasury yields?|Bessent|tariffs?|intervention|Trump.{0,40}(Fed|dollar|rates?|tariff)|ドル円|円安|円高|豪ドル|日銀|介入|雇用統計|CPI|NFP|payrolls)/i;
 
 async function loadXPosts() {
   for (const source of X_URLS) {
