@@ -161,26 +161,10 @@ const widgets = {
       .catch(() => host.replaceChildren(el("a", { href: "https://www.tradingview.com/symbols/USDJPY/", target: "_blank", rel: "noopener noreferrer", class: "block-link rate-fallback", text: "レートを読み込めません。TradingViewで開く" })));
   },
 
-  oanda() {
-    // OANDA証券の「通貨の強弱チャート」ウィジェット（公式の埋め込み用スクリプト）
-    if (this.oandaShown) return;
-    this.oandaShown = true;
-    const host = $("#oanda-cpb-host");
-    const marker = el("div", { "data-currency-power-balance": "" });
-    const script = document.createElement("script");
-    script.src = "https://widget.oanda.jp/currency-power-balance.js";
-    script.textContent = JSON.stringify({ width: "auto", height: "auto" });
-    script.onerror = () => host.replaceChildren(el("div", { class: "empty" },
-      el("strong", { text: "通貨強弱チャートを読み込めませんでした" }),
-      el("a", { class: "ghost-btn", href: "https://www.oanda.jp/lab-education/oanda_lab/oanda_rab/currency_power_balance/", target: "_blank", rel: "noopener noreferrer" }, icon("i-ext"), "OANDAで開く")));
-    host.replaceChildren(marker, script);
-  },
-
   market() {
     this.marketShown = true;
-    this.oanda();
+    strength.show();
     const host = $("#forex-table-host");
-    $("#market-status").textContent = "読み込んでいます";
     loadScript("https://widgets.tradingview-widget.com/w/en/tv-forex-table.js", { module: true })
       .then(() => {
         const table = document.createElement("tv-forex-table");
@@ -191,7 +175,6 @@ const widgets = {
         table.setAttribute("transparent", "");
         table.setAttribute("locale", "ja");
         host.replaceChildren(table);
-        $("#market-status").textContent = "主要8通貨の強弱の推移";
       })
       .catch(() => {
         host.replaceChildren(el("div", { class: "empty" },
@@ -199,7 +182,6 @@ const widgets = {
           "通信環境を確認するか、TradingViewで直接開いてください。",
           el("br"),
           el("a", { class: "ghost-btn", href: "https://www.tradingview.com/heatmap/forex/", target: "_blank", rel: "noopener noreferrer" }, icon("i-ext"), "TradingViewで開く")));
-        $("#market-status").textContent = "読み込めませんでした";
       });
   },
 
@@ -257,7 +239,7 @@ const widgets = {
 
   rethemeAll() {
     this.ticker();
-    if (this.marketShown) this.market();
+    if (this.marketShown) { this.market(); strength.render(); }
     if (this.chartShown) this.chart();
     if (this.xShown) this.x();
   }
@@ -1186,6 +1168,182 @@ function runGlobalSearch() {
   }
   globalResults.hidden = false;
 }
+
+/* =========================================================
+   通貨強弱（自作チャート）
+   GitHub Actions が主要7ペアの価格から8通貨の強弱を計算（strength.json）
+   ========================================================= */
+const STRENGTH_URLS = [
+  { url: "https://api.github.com/repos/L1nus2910/fx-news-terminal/contents/strength.json?ref=data", headers: { Accept: "application/vnd.github.raw+json" } },
+  { url: "https://raw.githubusercontent.com/L1nus2910/fx-news-terminal/data/strength.json", headers: {} }
+];
+const CUR_ORDER = ["AUD", "USD", "JPY", "EUR", "GBP", "NZD", "CAD", "CHF"];
+const CUR_NAME = { AUD: "豪ドル", USD: "米ドル", JPY: "円", EUR: "ユーロ", GBP: "ポンド", NZD: "NZドル", CAD: "加ドル", CHF: "スイス" };
+const HIGHLIGHT = { AUD: "--s-aud", USD: "--s-usd", JPY: "--s-jpy" };
+const MY_PAIRS = [["USD", "JPY", "ドル円"], ["AUD", "JPY", "豪ドル円"], ["AUD", "USD", "豪ドル/米ドル"]];
+
+const strength = {
+  data: null,
+  hidden: new Set(store("fx-strength-hidden", [])),
+  timer: null,
+  hoverIndex: null,
+
+  async load() {
+    for (const source of STRENGTH_URLS) {
+      try {
+        const response = await fetch(source.url, { headers: source.headers, cache: "no-store" });
+        if (!response.ok) continue;
+        const data = await response.json();
+        if (!data.today?.timestamps?.length) continue;
+        this.data = data;
+        return true;
+      } catch { /* 次へ */ }
+    }
+    return false;
+  },
+
+  async show() {
+    clearInterval(this.timer);
+    if (!this.data) await this.load();
+    this.render();
+    this.timer = setInterval(async () => {
+      if (currentScreen !== "market") { clearInterval(this.timer); return; }
+      if (await this.load()) this.render();
+    }, 5 * 60e3);
+  },
+
+  range() { return segValue($("#strength-range")) === "week" && this.data?.week ? this.data.week : this.data?.today; },
+
+  render() {
+    const plot = $("#strength-plot");
+    const set = this.range();
+    if (!set) {
+      plot.replaceChildren(el("div", { class: "empty" }, el("strong", { text: "通貨強弱のデータを準備しています" }), "数分後にもう一度開いてください。"));
+      return;
+    }
+    const n = set.timestamps.length;
+    const latest = Object.fromEntries(CUR_ORDER.map(c => [c, set.series[c][n - 1]]));
+    $("#market-status").textContent = `${fmtTime.format(new Date(set.timestamps[n - 1] * 1000))}時点・${segValue($("#strength-range")) === "week" ? "5日間" : "NY終値から"}`;
+    this.renderPairs(latest);
+    this.renderLegend();
+    this.renderChart(set);
+    this.renderRank(latest);
+  },
+
+  renderPairs(latest) {
+    $("#pair-power").replaceChildren(...MY_PAIRS.map(([a, b, label]) => {
+      const diff = latest[a] - latest[b];
+      const tone = diff > 0.05 ? "up" : diff < -0.05 ? "down" : "flat";
+      return el("div", { class: `pp ${tone}` },
+        el("span", { class: "pp-label", text: label }),
+        el("strong", { class: "num", text: `${diff > 0 ? "+" : ""}${diff.toFixed(2)}` }),
+        el("small", { text: tone === "up" ? `${CUR_NAME[a]}が優勢` : tone === "down" ? `${CUR_NAME[b]}が優勢` : "拮抗" }));
+    }));
+  },
+
+  renderLegend() {
+    $("#strength-legend").replaceChildren(...CUR_ORDER.map(c => {
+      const on = !this.hidden.has(c);
+      return el("button", {
+        type: "button", class: `lg${HIGHLIGHT[c] ? " hl" : ""}`, "aria-pressed": String(on), style: HIGHLIGHT[c] ? `--c: var(${HIGHLIGHT[c]})` : "",
+        onclick: () => { on ? this.hidden.add(c) : this.hidden.delete(c); save("fx-strength-hidden", [...this.hidden]); this.render(); }
+      }, el("i"), c);
+    }));
+  },
+
+  renderChart(set) {
+    const host = $("#strength-plot");
+    const W = Math.max(300, Math.round(host.clientWidth || 600));
+    const H = W < 520 ? 280 : 340;
+    const pad = { l: 40, r: 46, t: 12, b: 26 };
+    const visible = CUR_ORDER.filter(c => !this.hidden.has(c));
+    const vals = visible.flatMap(c => set.series[c]);
+    let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+    const span = Math.max(0.2, hi - lo);
+    lo -= span * 0.08; hi += span * 0.08;
+    const n = set.timestamps.length;
+    const x = i => pad.l + (W - pad.l - pad.r) * (n === 1 ? 0 : i / (n - 1));
+    const y = v => pad.t + (H - pad.t - pad.b) * (1 - (v - lo) / (hi - lo));
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("width", W); svg.setAttribute("height", H);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "主要8通貨の強弱の推移");
+    const add = (tag, attrs, parent = svg) => { const node = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); parent.append(node); return node; };
+
+    // 目盛り
+    const step = niceStep((hi - lo) / 5);
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+      const yy = y(v);
+      add("line", { x1: pad.l, x2: W - pad.r, y1: yy, y2: yy, class: Math.abs(v) < step / 2 ? "zero" : "grid" });
+      add("text", { x: pad.l - 6, y: yy + 4, class: "tick", "text-anchor": "end" }).textContent = (Math.abs(v) < 1e-9 ? 0 : v).toFixed(step < 0.1 ? 2 : 1);
+    }
+    const week = segValue($("#strength-range")) === "week";
+    const fmtX = new Intl.DateTimeFormat("ja-JP", week ? { timeZone: JST, month: "numeric", day: "numeric" } : { timeZone: JST, hour: "2-digit", minute: "2-digit" });
+    const ticks = W < 520 ? 3 : 5;
+    for (let k = 0; k <= ticks; k++) {
+      const i = Math.round((n - 1) * k / ticks);
+      add("text", { x: x(i), y: H - 6, class: "tick", "text-anchor": k === 0 ? "start" : k === ticks ? "end" : "middle" }).textContent = fmtX.format(new Date(set.timestamps[i] * 1000));
+    }
+
+    // 線：グレーの通貨を先に、強調3通貨を上に
+    const order = [...visible].sort((a, b) => (HIGHLIGHT[a] ? 1 : 0) - (HIGHLIGHT[b] ? 1 : 0));
+    order.forEach(c => {
+      const d = set.series[c].map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+      add("path", { d, class: `line ${HIGHLIGHT[c] ? "hl" : "dim"}`, style: HIGHLIGHT[c] ? `stroke: var(${HIGHLIGHT[c]})` : "" });
+    });
+
+    // 右端のラベル（重ならないよう間隔をあける）
+    const ends = visible.map(c => ({ c, y: y(set.series[c][n - 1]) })).sort((a, b) => a.y - b.y);
+    for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 12) ends[k].y = ends[k - 1].y + 12;
+    const overflow = ends.length ? ends[ends.length - 1].y - (H - pad.b) : 0;
+    if (overflow > 0) ends.forEach(e => { e.y -= overflow; });
+    ends.forEach(({ c, y: yy }) => add("text", { x: W - pad.r + 6, y: yy + 4, class: `endlabel${HIGHLIGHT[c] ? " hl" : ""}`, style: HIGHLIGHT[c] ? `fill: var(${HIGHLIGHT[c]})` : "" }).textContent = c);
+
+    // ホバー（十字線とツールチップ）
+    const cross = add("line", { class: "cross", y1: pad.t, y2: H - pad.b, x1: -10, x2: -10 });
+    const hit = add("rect", { x: pad.l, y: 0, width: W - pad.l - pad.r, height: H, fill: "transparent" });
+    const tip = el("div", { class: "s-tip", hidden: true });
+    const move = event => {
+      const rect = svg.getBoundingClientRect();
+      const px = (event.clientX - rect.left) * (W / rect.width);
+      const i = Math.max(0, Math.min(n - 1, Math.round((px - pad.l) / (W - pad.l - pad.r) * (n - 1))));
+      cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i));
+      const rows = visible.map(c => [c, set.series[c][i]]).sort((a, b) => b[1] - a[1]);
+      tip.replaceChildren(el("b", { text: new Intl.DateTimeFormat("ja-JP", { timeZone: JST, month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(set.timestamps[i] * 1000)) }),
+        ...rows.map(([c, v]) => el("div", { class: HIGHLIGHT[c] ? "hl" : "" }, el("i", { style: HIGHLIGHT[c] ? `background: var(${HIGHLIGHT[c]})` : "" }), el("span", { text: c }), el("em", { text: `${v > 0 ? "+" : ""}${v.toFixed(2)}` }))));
+      tip.hidden = false;
+      const left = (x(i) / W) * rect.width;
+      tip.style.left = `${Math.min(rect.width - 150, Math.max(0, left + (left > rect.width / 2 ? -160 : 12)))}px`;
+    };
+    hit.addEventListener("pointermove", move);
+    hit.addEventListener("pointerdown", move);
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("x1", -10); cross.setAttribute("x2", -10); });
+    host.replaceChildren(svg, tip);
+  },
+
+  renderRank(latest) {
+    const max = Math.max(0.01, ...CUR_ORDER.map(c => Math.abs(latest[c])));
+    const rows = [...CUR_ORDER].sort((a, b) => latest[b] - latest[a]);
+    $("#strength-rank").replaceChildren(el("div", { class: "rank-head", text: "いまの強さランキング" }), ...rows.map((c, k) => {
+      const v = latest[c];
+      const w = Math.abs(v) / max * 50;
+      return el("div", { class: `rank-row${HIGHLIGHT[c] ? " hl" : ""}` },
+        el("span", { class: "rank-no num", text: k + 1 }),
+        el("span", { class: "rank-cur" }, el("b", { text: c }), el("small", { text: CUR_NAME[c] })),
+        el("span", { class: "rank-bar" }, el("i", { class: v >= 0 ? "pos" : "neg", style: `width:${w}%;${HIGHLIGHT[c] ? `background: var(${HIGHLIGHT[c]})` : ""}` })),
+        el("span", { class: "rank-val num", text: `${v > 0 ? "+" : ""}${v.toFixed(2)}` }));
+    }));
+  }
+};
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+segmented($("#strength-range"), () => strength.render());
+window.addEventListener("resize", () => { if (currentScreen === "market" && strength.data) strength.render(); });
 
 /* =========================================================
    PWA（ホーム画面に追加）

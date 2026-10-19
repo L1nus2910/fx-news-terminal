@@ -379,6 +379,78 @@ def html_unescape(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# 通貨強弱（主要8通貨）
+# 各通貨の対ドル価値の変化率から、8通貨平均との差を「強さ」とする
+# ---------------------------------------------------------------------------
+STRENGTH_SYMBOLS = {  # 通貨: (Yahoo のシンボル, 対ドル価値への換算が逆数か)
+    "EUR": ("EURUSD=X", False), "GBP": ("GBPUSD=X", False), "AUD": ("AUDUSD=X", False),
+    "NZD": ("NZDUSD=X", False), "JPY": ("JPY=X", True), "CHF": ("CHF=X", True), "CAD": ("CAD=X", True),
+}
+CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD", "NZD", "CAD", "CHF"]
+STRENGTH_INTERVAL = 300
+
+
+def yahoo_closes(symbol: str, interval: str, rng: str) -> dict[int, float]:
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(symbol)}?interval={interval}&range={rng}"
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        result = json.loads(response.read())["chart"]["result"][0]
+    closes = result["indicators"]["quote"][0]["close"]
+    return {ts: c for ts, c in zip(result["timestamp"], closes) if c}
+
+
+def ny_close_base(now: dt.datetime) -> int:
+    from zoneinfo import ZoneInfo
+    ny = now.astimezone(ZoneInfo("America/New_York"))
+    base = ny.replace(hour=17, minute=0, second=0, microsecond=0)
+    if base > ny:
+        base -= dt.timedelta(days=1)
+    while base.weekday() == 5:  # 土曜17時は金曜17時に寄せる
+        base -= dt.timedelta(days=1)
+    return int(base.timestamp())
+
+
+def strength_series(interval: str, rng: str, base_ts: int | None, step: int) -> dict:
+    raw = {cur: yahoo_closes(sym, interval, rng) for cur, (sym, _) in STRENGTH_SYMBOLS.items()}
+    times = sorted({t for series in raw.values() for t in series})
+    if base_ts is not None:
+        times = [t for t in times if t >= base_ts - step]
+    last: dict[str, float] = {}
+    rows: list[tuple[int, dict[str, float]]] = []
+    for t in times:
+        for cur, series in raw.items():
+            if t in series:
+                last[cur] = series[t]
+        if len(last) == len(raw):
+            rows.append((t, dict(last)))
+    if len(rows) < 2:
+        raise ValueError("not enough price data")
+    base_row = rows[0][1]
+    def usd_value(cur: str, price: float) -> float:
+        return 1 / price if STRENGTH_SYMBOLS[cur][1] else price
+    out_t, out = [], {c: [] for c in CURRENCIES}
+    for t, prices in rows:
+        pct = {"USD": 0.0}
+        for cur in STRENGTH_SYMBOLS:
+            pct[cur] = (usd_value(cur, prices[cur]) / usd_value(cur, base_row[cur]) - 1) * 100
+        mean = sum(pct.values()) / len(pct)
+        out_t.append(t)
+        for c in CURRENCIES:
+            out[c].append(round(pct[c] - mean, 4))
+    return {"base": rows[0][0], "timestamps": out_t, "series": out}
+
+
+def fetch_strength() -> dict:
+    now = dt.datetime.now(dt.timezone.utc)
+    data = {"updated_at": now.isoformat(timespec="seconds"), "unit": "%", "today": strength_series("5m", "2d", ny_close_base(now), 300)}
+    try:
+        data["week"] = strength_series("1h", "5d", None, 3600)
+    except Exception:  # noqa: BLE001
+        pass
+    return data
+
+
+# ---------------------------------------------------------------------------
 # Telegram 通知（任意）
 # ---------------------------------------------------------------------------
 def jst(iso: str) -> str:
@@ -469,6 +541,8 @@ def main() -> int:
         except ValueError:
             pass
 
+    strength_path = DATA_DIR / "strength.json"
+    last_strength = 0.0
     x_path = DATA_DIR / "x_list.json"
     last_x_fetch, last_x_json = 0.0, None
     translations: dict[str, str] = {}
@@ -481,6 +555,14 @@ def main() -> int:
     started = time.monotonic()
     failures = 0
     while True:
+        if time.monotonic() - last_strength >= STRENGTH_INTERVAL:
+            last_strength = time.monotonic()
+            try:
+                strength_path.write_text(json.dumps(fetch_strength(), separators=(",", ":")))
+                publish("通貨強弱を更新")
+                print("strength written", flush=True)
+            except Exception as error:  # noqa: BLE001
+                print(f"strength failed ({type(error).__name__}: {str(error)[:120]})", file=sys.stderr, flush=True)
         if time.monotonic() - last_x_fetch >= X_INTERVAL:
             last_x_fetch = time.monotonic()
             try:

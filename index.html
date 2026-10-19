@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/app.css?v=202610200209">
+  <link rel="stylesheet" href="assets/app.css?v=202610200222">
 </head>
 <body>
   <!-- SVG アイコン定義 -->
@@ -210,12 +210,23 @@
           <h1>通貨強弱</h1>
           <p id="market-status">主要8通貨の強弱の推移</p>
         </div>
-        <p class="lead">上にあるほど買われている（強い）通貨です。豪ドル（AUD）・米ドル（USD）・円（JPY）の線の位置と傾きで、どのペアが動きやすいかを見られます。右の国旗で通貨の表示を切り替えられます。</p>
-        <div class="widget-card oanda-card" id="oanda-cpb-host"><div class="empty">通貨強弱チャートを準備しています</div></div>
-        <p class="credit">通貨の強弱チャート：<a href="https://www.oanda.jp/lab-education/oanda_lab/oanda_rab/currency_power_balance/" target="_blank" rel="noopener noreferrer">OANDA証券</a></p>
+        <p class="lead">上にあるほど買われている（強い）通貨です。NY終値（日本時間6時または7時）からの変化を、8通貨の平均との差で表しています。</p>
+        <div class="filters">
+          <div class="seg" role="radiogroup" aria-label="期間" id="strength-range">
+            <button type="button" role="radio" data-value="today" aria-checked="true">今日</button>
+            <button type="button" role="radio" data-value="week" aria-checked="false">5日間</button>
+          </div>
+        </div>
+        <div class="pair-power" id="pair-power"></div>
+        <div class="widget-card strength-card">
+          <div class="strength-legend" id="strength-legend" role="group" aria-label="表示する通貨"></div>
+          <div class="strength-plot" id="strength-plot"><div class="empty">通貨強弱を読み込んでいます</div></div>
+        </div>
+        <div class="list-card strength-rank" id="strength-rank"></div>
+        <p class="credit">価格データ：Yahoo Finance（5分ごとに自動取得）。参考：<a href="https://www.oanda.jp/lab-education/oanda_lab/oanda_rab/currency_power_balance/" target="_blank" rel="noopener noreferrer">OANDA証券 通貨の強弱チャート</a></p>
         <div class="block-head" style="margin-top:22px"><h2>前日比ヒートマップ</h2></div>
         <div class="widget-card" id="forex-table-host"><div class="empty">表示を準備しています</div></div>
-        <p class="credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView</a>。将来の値動きを示すものではありません。</p>
+        <p class="credit">ヒートマップ：<a href="https://www.tradingview.com/widget-docs/widgets/heatmaps/forex-table/" target="_blank" rel="noopener noreferrer">TradingView</a>。どちらも将来の値動きを示すものではありません。</p>
       </section>
 
       <!-- チャート -->
@@ -318,6 +329,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/app.js?v=202610200209" defer></script>
+  <script src="assets/app.js?v=202610200222" defer></script>
 </body>
 </html>

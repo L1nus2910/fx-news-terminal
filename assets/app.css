@@ -585,9 +585,55 @@ svg { width: 1em; height: 1em; flex: none; }
   box-shadow: var(--shadow-card); overflow: hidden; min-height: 200px;
 }
 .widget-card tv-forex-table { display: block; width: 100%; min-height: 460px; }
-.oanda-card { background: #fff; padding: 8px 4px 4px; min-height: 360px; }
-.oanda-card iframe { display: block; width: 100% !important; max-width: 100% !important; }
-.oanda-card .empty { color: #4A5A6E; }
+/* 通貨強弱 */
+:root { --s-aud: #2a78d6; --s-usd: #eb6834; --s-jpy: #1baf7a; }
+:root[data-theme="dark"] { --s-aud: #3987e5; --s-usd: #d95926; --s-jpy: #199e70; }
+@media (prefers-color-scheme: dark) { :root[data-theme="auto"] { --s-aud: #3987e5; --s-usd: #d95926; --s-jpy: #199e70; } }
+.pair-power { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.pp { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 1px; }
+.pp-label { font-size: 12px; color: var(--ink-3); font-weight: 700; }
+.pp strong { font-size: 20px; line-height: 1.2; }
+.pp.up strong { color: var(--up); } .pp.down strong { color: var(--down); }
+.pp small { font-size: 11.5px; color: var(--ink-2); }
+.strength-card { padding: 12px 8px 6px; min-height: 0; position: relative; }
+.strength-legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 6px 8px; }
+.lg { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: 600 13px var(--num); letter-spacing: .03em; }
+.lg i { width: 14px; height: 3px; border-radius: 2px; background: var(--c, var(--ink-3)); opacity: .9; }
+.lg.hl { color: var(--ink); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+.lg[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
+.strength-plot { position: relative; width: 100%; overflow: hidden; }
+.strength-plot svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.strength-plot .grid { stroke: var(--line); stroke-width: 1; }
+.strength-plot .zero { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
+.strength-plot .tick { fill: var(--ink-3); font: 500 11px var(--num); }
+.strength-plot .line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.strength-plot .line.dim { stroke: var(--ink-3); stroke-width: 1.4; opacity: .45; }
+.strength-plot .line.hl { stroke-width: 2.5; }
+.strength-plot .endlabel { fill: var(--ink-3); font: 600 11px var(--num); }
+.strength-plot .endlabel.hl { font-size: 12px; font-weight: 700; }
+.strength-plot .cross { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 2 3; }
+.s-tip { position: absolute; top: 8px; min-width: 140px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-float); font-size: 12px; pointer-events: none; }
+.s-tip b { display: block; font: 600 12px var(--num); color: var(--ink-2); margin-bottom: 4px; }
+.s-tip div { display: grid; grid-template-columns: 12px 36px 1fr; align-items: center; gap: 4px; color: var(--ink-2); }
+.s-tip div.hl { color: var(--ink); font-weight: 700; }
+.s-tip i { width: 10px; height: 3px; border-radius: 2px; background: var(--ink-3); }
+.s-tip span { font-family: var(--num); }
+.s-tip em { font: normal 600 12px var(--num); text-align: right; font-variant-numeric: tabular-nums; }
+.strength-rank { margin-top: 12px; padding: 4px 0; }
+.rank-head { padding: 10px 16px 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.rank-row { display: grid; grid-template-columns: 22px 92px 1fr 56px; align-items: center; gap: 8px; padding: 7px 16px; }
+.rank-no { color: var(--ink-3); font-size: 13px; }
+.rank-cur b { font: 700 14px var(--num); margin-right: 6px; }
+.rank-cur small { font-size: 11px; color: var(--ink-3); }
+.rank-row:not(.hl) .rank-cur b { color: var(--ink-2); }
+.rank-bar { position: relative; height: 8px; border-radius: 4px; background: var(--surface-3); }
+.rank-bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line-strong); }
+.rank-bar i { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--ink-3); opacity: .8; }
+.rank-bar i.pos { left: 50%; } .rank-bar i.neg { right: 50%; }
+.rank-row.hl .rank-bar i { opacity: 1; }
+.rank-val { text-align: right; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.rank-row.hl .rank-val { color: var(--ink); }
+@media (max-width: 520px) { .pp strong { font-size: 17px; } .pp { padding: 8px 10px; } .rank-row { grid-template-columns: 18px 80px 1fr 50px; padding: 6px 12px; } }
 .chart-card { height: min(70vh, 640px); min-height: 420px; padding: 0; }
 .chart-card .tradingview-widget-container { height: 100%; width: 100%; }
 .x-card { padding: 6px 10px; min-height: 520px; }
