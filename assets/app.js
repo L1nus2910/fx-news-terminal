@@ -164,25 +164,6 @@ const widgets = {
   market() {
     this.marketShown = true;
     strength.show();
-    const host = $("#forex-table-host");
-    loadScript("https://widgets.tradingview-widget.com/w/en/tv-forex-table.js", { module: true })
-      .then(() => {
-        const table = document.createElement("tv-forex-table");
-        table.setAttribute("displayed-value", "dailyChange");
-        table.setAttribute("heatmap", "");
-        table.setAttribute("theme", theme.effective);
-        table.setAttribute("force-theme", "");
-        table.setAttribute("transparent", "");
-        table.setAttribute("locale", "ja");
-        host.replaceChildren(table);
-      })
-      .catch(() => {
-        host.replaceChildren(el("div", { class: "empty" },
-          el("strong", { text: "通貨強弱を読み込めませんでした" }),
-          "通信環境を確認するか、TradingViewで直接開いてください。",
-          el("br"),
-          el("a", { class: "ghost-btn", href: "https://www.tradingview.com/heatmap/forex/", target: "_blank", rel: "noopener noreferrer" }, icon("i-ext"), "TradingViewで開く")));
-      });
   },
 
   chart() {
