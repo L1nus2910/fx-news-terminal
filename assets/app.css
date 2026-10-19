@@ -742,7 +742,7 @@ svg { width: 1em; height: 1em; flex: none; }
   .brand-text strong { font-size: 16px; }
   .ratebar { position: static; padding: 0 10px 6px; }
   .ratebar-inner { gap: 6px; }
-  .rate-card { height: 96px; border-radius: var(--r-md); }
+  .rate-card { height: 140px; border-radius: var(--r-md); }  /* 幅が狭いとTradingViewが価格を省くため、高さで確保 */
   .alert-bar { padding: 0 10px 6px; }
   .alert-bar { gap: 4px; }
   .alert { border-radius: 12px; }
