@@ -696,7 +696,9 @@ function normalizeEvent(raw) {
     surprise: raw.surprise ?? null,
     level: Number(raw.level) || 1,
     source_url: raw.source_url || null,
-    source: raw.source || null
+    source: raw.source || null,
+    primary: raw.primary !== false,
+    group_size: Number(raw.group_size) || 1
   };
 }
 
@@ -867,7 +869,7 @@ let nextEventTimer;
 function renderNextEvent() {
   const host = $("#next-event");
   const now = Date.now();
-  const upcoming = calendarEvents.filter(e => e.date && e.date.getTime() > now - 20 * 60e3 && !(e.actual && e.date.getTime() < now - 20 * 60e3));
+  const upcoming = calendarEvents.filter(e => e.primary && e.date && e.date.getTime() > now - 20 * 60e3 && !(e.actual && e.date.getTime() < now - 20 * 60e3));
   const pick = upcoming.find(e => e.level >= 3 && !e.actual) || upcoming.find(e => e.level >= 3) || upcoming.find(e => e.level >= 2) || upcoming[0];
   clearInterval(nextEventTimer);
   const todayCount = calendarEvents.filter(e => e.date && dayKey(e.date) === dayKey(new Date()) && e.level >= 2).length;
@@ -918,7 +920,7 @@ function renderNextEvent() {
 /* 重要指標をニュースの流れに入れる（予定・結果） */
 function eventNewsItems() {
   const now = Date.now();
-  return calendarEvents.filter(e => e.date && e.level >= 2 && (
+  return calendarEvents.filter(e => e.primary && e.date && e.level >= 2 && (
     (e.actual && now - e.date.getTime() < 3 * 86400e3 && e.date.getTime() <= now + 60e3) ||
     (!e.actual && e.level >= 3 && e.date.getTime() > now - 60 * 60e3 && e.date.getTime() - now < 24 * 3600e3)
   )).map(e => {
@@ -927,7 +929,7 @@ function eventNewsItems() {
       isEvent: true,
       event: e,
       source: "経済指標",
-      title: released ? `${e.title_ja} 結果 ${e.actual}` : `${e.title_ja} ${fmtTime.format(e.date)} 発表予定`,
+      title: (released ? `${e.title_ja} 結果 ${e.actual}` : `${e.title_ja} ${fmtTime.format(e.date)} 発表予定`) + (e.group_size > 1 ? `（ほか${e.group_size - 1}件）` : ""),
       summary: `予想 ${val(e.forecast)} ／ 前回 ${val(e.previous)}${released ? "" : `・${COUNTRY[e.country]?.pairs || ""}に影響`}`,
       url: eventLink(e) || "",
       published_at: e.date.toISOString(),
@@ -945,13 +947,13 @@ function renderAlerts() {
   const now = Date.now();
   const items = [];
   const results = calendarEvents
-    .filter(e => e.level >= 3 && e.actual && e.date && now - e.date.getTime() < 90 * 60e3 && e.date.getTime() <= now + 60e3 && !dismissedAlerts.has(`res:${e.id}`))
+    .filter(e => e.primary && e.level >= 3 && e.actual && e.date && now - e.date.getTime() < 90 * 60e3 && e.date.getTime() <= now + 60e3 && !dismissedAlerts.has(`res:${e.id}`))
     .sort((a, b) => b.date - a.date).slice(0, 2);
   results.forEach(e => items.push({ key: `res:${e.id}`, kind: `res ${e.surprise || ""}`, label: "結果", e,
     text: `${e.actual}（予想 ${val(e.forecast)}）${e.surprise === "up" ? " ▲上振れ" : e.surprise === "down" ? " ▼下振れ" : e.surprise === "inline" ? " 予想通り" : ""}` }));
-  const waiting = calendarEvents.find(e => e.level >= 3 && !e.actual && e.date && e.date.getTime() <= now && now - e.date.getTime() < 20 * 60e3);
+  const waiting = calendarEvents.find(e => e.primary && e.level >= 3 && !e.actual && e.date && e.date.getTime() <= now && now - e.date.getTime() < 20 * 60e3);
   if (waiting) items.push({ key: `wait:${waiting.id}`, kind: "wait", label: "発表時刻", e: waiting, text: `結果待ち（予想 ${val(waiting.forecast)}）` });
-  const soon = calendarEvents.filter(e => e.level >= 3 && !e.actual && e.date && e.date.getTime() > now && e.date.getTime() - now <= 60 * 60e3).slice(0, 2);
+  const soon = calendarEvents.filter(e => e.primary && e.level >= 3 && !e.actual && e.date && e.date.getTime() > now && e.date.getTime() - now <= 60 * 60e3).slice(0, 2);
   soon.forEach(e => items.push({ key: `pre:${e.id}`, kind: "pre", label: `あと${Math.max(1, Math.ceil((e.date.getTime() - now) / 60e3))}分`, e,
     text: `${fmtTime.format(e.date)}発表 予想 ${val(e.forecast)}` }));
 
@@ -977,7 +979,7 @@ function notifyEvents() {
   if (!notifySetting.on) return;
   const now = Date.now();
   calendarEvents.forEach(e => {
-    if (e.level < 3 || !e.date) return;
+    if (e.level < 3 || !e.primary || !e.date) return;
     const minutes = (e.date.getTime() - now) / 60e3;
     const pre = `pre:${e.id}`, res = `res:${e.id}`;
     if (!e.actual && minutes > 0 && minutes <= 5 && !notified.has(pre)) {

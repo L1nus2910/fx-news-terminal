@@ -34,7 +34,10 @@ PREFIX = {"US": "米", "JP": "日本", "AU": "豪"}
 # 日本語名
 # ---------------------------------------------------------------------------
 NAME_RULES: list[tuple[str, str]] = [
-    (r"tokyo core cpi|tokyo cpi ex", "東京都区部コアCPI"),
+    (r"gdpnow", "アトランタ連銀GDPNow"),
+    (r"tokyo cpi ex[- ]food and energy", "東京都区部コアコアCPI"),
+    (r"ex[- ]food and energy", "コアコアCPI"),
+    (r"tokyo core cpi", "東京都区部コアCPI"),
     (r"tokyo (cpi|inflation)", "東京都区部CPI"),
     (r"core pce", "コアPCEデフレーター"),
     (r"\bpce price|pce index", "PCEデフレーター"),
@@ -56,7 +59,7 @@ NAME_RULES: list[tuple[str, str]] = [
     (r"ppi|producer price", "生産者物価指数（PPI）"),
     (r"wage price index", "賃金価格指数"),
     (r"(fed|fomc) interest rate decision|fed funds", "FOMC政策金利"),
-    (r"fomc (press conference)", "FOMC議長会見"),
+    (r"(fomc|fed) press conference", "FOMC議長会見"),
     (r"fomc minutes", "FOMC議事要旨"),
     (r"boj interest rate decision|boj policy rate", "日銀政策金利"),
     (r"boj press conference", "日銀総裁会見"),
@@ -88,9 +91,26 @@ NAME_RULES: list[tuple[str, str]] = [
     (r"trade balance", "貿易収支"),
     (r"current account", "経常収支"),
     (r"balance of trade", "貿易収支"),
+    (r"chicago pmi", "シカゴPMI"),
+    (r"midterm elections", "中間選挙"),
+    (r"^consumer confidence", "消費者態度指数"),
+    (r"import prices", "輸入物価指数"),
+    (r"export prices", "輸出物価指数"),
+    (r"capacity utilization", "設備稼働率"),
+    (r"manufacturing production", "製造業生産"),
+    (r"nahb", "NAHB住宅市場指数"),
+    (r"composite pmi", "総合PMI"),
+    (r"(\d+)-(week|month|year) bill auction", "短期国債入札"),
+    (r"bond auction|note auction|jgb auction", "国債入札"),
+    (r"eia crude oil stocks", "EIA原油在庫"),
+    (r"api crude oil", "API原油在庫"),
+    (r"mba mortgage applications", "MBA住宅ローン申請件数"),
+    (r"tertiary industry", "第3次産業活動指数"),
+    (r"tic flows", "対米証券投資"),
+    (r"monthly budget statement", "月次財政収支"),
     (r"(\w+) speech|speaks", "要人発言"),
 ]
-SUFFIX_RULES = [(r"\byoy\b", "（前年比）"), (r"\bmom\b", "（前月比）"), (r"\bqoq\b", "（前期比）")]
+SUFFIX_RULES = [(r"4-week average", "（4週平均）"), (r"\byoy\b", "（前年比）"), (r"\bmom\b", "（前月比）"), (r"\bqoq\b", "（前期比）")]
 SPEAKERS = [
     (r"warsh", "ウォーシュFRB議長"), (r"powell", "パウエル氏"), (r"jefferson", "ジェファーソンFRB副議長"),
     (r"bowman", "ボウマンFRB副議長"), (r"waller", "ウォラーFRB理事"), (r"williams", "ウィリアムズNY連銀総裁"),
@@ -105,11 +125,15 @@ def japanese_title(country: str, title: str) -> str:
         for pattern, name in SPEAKERS:
             if re.search(pattern, low):
                 return f"{name} 発言"
+        m = re.search(r"\b(fed|rba|boj)\b(?: chair| governor| deputy governor| vice chair)? ([a-z]+)", low)
+        if m:
+            org = {"fed": "FRB", "rba": "RBA", "boj": "日銀"}[m.group(1)]
+            return f"{org} {m.group(2).capitalize()}氏 発言"
     for pattern, name in NAME_RULES:
         if re.search(pattern, low):
             if name in {"要人発言"}:
                 break
-            prefix = "" if name.startswith(("FOMC", "日銀", "RBA", "東京", "ADP", "JOLTS", "ISM", "ミシガン", "コンファレンス", "ウエストパック", "NAB")) else PREFIX.get(country, "")
+            prefix = "" if name.startswith(("FOMC", "日銀", "RBA", "東京", "ADP", "JOLTS", "ISM", "ミシガン", "コンファレンス", "ウエストパック", "NAB", "アトランタ", "EIA", "API", "MBA", "シカゴ")) else PREFIX.get(country, "")
             suffix = next((s for p, s in SUFFIX_RULES if re.search(p, low)), "")
             return f"{prefix}{name}{suffix}"
     return title
@@ -120,7 +144,7 @@ def japanese_title(country: str, title: str) -> str:
 # ---------------------------------------------------------------------------
 TOP = re.compile(
     r"interest rate decision|fed funds|non[ -]?farm|unemployment rate|employment change"
-    r"|inflation rate|\bcpi\b|core pce|pce price|fomc press|boj press|rba press|monthly cpi indicator|trimmed mean"
+    r"|inflation rate|\bcpi\b|core pce|pce price|fomc press|fed press conference|boj press|rba press|monthly cpi indicator|trimmed mean"
 )
 SECOND = re.compile(
     r"ppi|producer price|retail sales|gdp|ism |pmi|jobless claims|jolts|adp|wage price|average hourly"
@@ -131,6 +155,10 @@ SECOND = re.compile(
 
 def level_of(country: str, title: str, importance: int | None) -> int:
     low = title.lower()
+    if re.search(r"gdpnow|4-week average|weekly|bill auction|auction|eia |api |mba |baker hughes|redbook|balance sheet|reserve balances", low):
+        return 1
+    if "employment change" in low and country != "AU" and "non farm" not in low:
+        return 2
     if country in COUNTRIES and TOP.search(low) and not re.search(r"\bfinal\b|revised", low):
         # 日本の失業率・雇用は相場への影響が比較的小さいため「中」
         if country == "JP" and re.search(r"unemployment|employment", low):
@@ -154,6 +182,9 @@ def fmt_value(value, unit: str | None, scale: str | None) -> str | None:
     except (TypeError, ValueError):
         return str(value)
     text = f"{num:,.3f}".rstrip("0").rstrip(".") if abs(num) < 1000 else f"{num:,.1f}".rstrip("0").rstrip(".")
+    if unit in ("$", "¥", "A$", "€", "£"):
+        sign = "-" if text.startswith("-") else ""
+        return f"{sign}{unit}{text.lstrip('-')}{scale or ''}"
     return f"{text}{scale or ''}{unit or ''}"
 
 
@@ -212,7 +243,37 @@ def fetch_tradingview() -> list[dict]:
             "source_url": row.get("source_url") if str(row.get("source_url") or "").startswith("https://") else None,
         })
     events.sort(key=lambda e: e["date"] or "")
+    mark_primary(events)
     return events
+
+
+# 同じ時刻にまとめて出る指標（例：豪CPIは10本以上）から、見出しにする1本を選ぶ
+PRIMARY_ORDER = [
+    r"interest rate decision", r"non[ -]?farm payrolls$", r"unemployment rate", r"employment change$",
+    r"core pce price index mom", r"core inflation rate mom", r"^inflation rate yoy", r"quarterly inflation rate yoy",
+    r"monthly cpi indicator", r"tokyo core cpi yoy", r"core inflation rate yoy", r"inflation rate mom", r"trimmed mean cpi qoq",
+    r"retail sales mom$", r"gdp growth rate qoq", r"ism manufacturing pmi$", r"ism services pmi$", r"initial jobless claims$",
+]
+
+
+def mark_primary(events: list[dict]) -> None:
+    groups: dict[tuple, list[dict]] = {}
+    for event in events:
+        event["primary"] = True
+        event["group_size"] = 1
+        if event["level"] >= 2 and event["date"]:
+            groups.setdefault((event["country"], event["date"][:16]), []).append(event)
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        def rank(e: dict) -> tuple:
+            low = e["title"].lower()
+            pos = next((i for i, p in enumerate(PRIMARY_ORDER) if re.search(p, low)), len(PRIMARY_ORDER))
+            return (-e["level"], pos)
+        best = min(members, key=rank)
+        for e in members:
+            e["primary"] = e is best
+        best["group_size"] = len(members)
 
 
 # ---------------------------------------------------------------------------
